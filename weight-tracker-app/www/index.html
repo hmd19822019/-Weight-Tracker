@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>体重记录</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 体重记录</h1>
+            <p class="date" id="currentDate"></p>
+        </header>
+
+        <main>
+            <!-- 输入区域 -->
+            <section class="input-section">
+                <div class="input-group">
+                    <label for="weightInput">今日体重</label>
+                    <div class="weight-input-wrapper">
+                        <input type="number" id="weightInput" step="0.1" min="20" max="300" placeholder="60.5">
+                        <span class="unit">kg</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="noteInput">备注（可选）</label>
+                    <input type="text" id="noteInput" placeholder="例如：早上测量、饭后测量...">
+                </div>
+                <button class="btn-primary" id="saveBtn">保存记录</button>
+            </section>
+
+            <!-- 统计信息 -->
+            <section class="stats-section" id="statsSection" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="currentWeight">--</div>
+                    <div class="stat-label">当前体重</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="weightChange">--</div>
+                    <div class="stat-label">较上次</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgWeight">--</div>
+                    <div class="stat-label">平均体重</div>
+                </div>
+            </section>
+
+            <!-- 图表 -->
+            <section class="chart-section" id="chartSection" style="display: none;">
+                <h2>体重趋势</h2>
+                <div class="chart-container">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 历史记录 -->
+            <section class="history-section" id="historySection" style="display: none;">
+                <div class="history-header">
+                    <h2>历史记录</h2>
+                    <button class="btn-secondary" id="exportBtn">导出</button>
+                    <button class="btn-danger" id="clearBtn">清空</button>
+                </div>
+                <div class="history-list" id="historyList">
+                    <!-- 动态生成 -->
+                </div>
+            </section>
+
+            <!-- 空状态 -->
+            <section class="empty-state" id="emptyState">
+                <div class="empty-icon">📝</div>
+                <p>还没有记录</p>
+                <p>输入体重开始记录吧！</p>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="cordova.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>
