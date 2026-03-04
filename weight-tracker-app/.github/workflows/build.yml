@@ -41,16 +41,31 @@ jobs:
     - name: Add Android platform
       run: cordova platform add android
       
-    - name: Generate signing key
+    - name: Setup signing key
       run: |
-        keytool -genkey -v -keystore weight-tracker.keystore \
-          -alias weight-tracker \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -storepass "WeightTracker2024" \
-          -keypass "WeightTracker2024" \
-          -dname "CN=Weight Tracker, OU=Development, O=Weight Tracker App, L=Shanghai, ST=Shanghai, C=CN"
+        # 如果GitHub Secrets中有密钥，使用它；否则生成新的
+        if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "Using keystore from secrets"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > weight-tracker.keystore
+        else
+          echo "Generating new keystore (first time setup)"
+          keytool -genkey -v -keystore weight-tracker.keystore \
+            -alias weight-tracker \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "WeightTracker2024" \
+            -keypass "WeightTracker2024" \
+            -dname "CN=Weight Tracker, OU=Development, O=Weight Tracker App, L=Shanghai, ST=Shanghai, C=CN"
+          
+          # 输出base64编码的密钥，用于添加到GitHub Secrets
+          echo "=========================================="
+          echo "IMPORTANT: Add this to GitHub Secrets as KEYSTORE_BASE64:"
+          echo "=========================================="
+          base64 -w 0 weight-tracker.keystore
+          echo ""
+          echo "=========================================="
+        fi
       
     - name: Create build.json
       run: |
@@ -59,9 +74,9 @@ jobs:
           "android": {
             "release": {
               "keystore": "weight-tracker.keystore",
-              "storePassword": "WeightTracker2024",
+              "storePassword": "${{ secrets.KEYSTORE_PASSWORD || 'WeightTracker2024' }}",
               "alias": "weight-tracker",
-              "password": "WeightTracker2024",
+              "password": "${{ secrets.KEY_PASSWORD || 'WeightTracker2024' }}",
               "keystoreType": ""
             }
           }
@@ -92,6 +107,7 @@ jobs:
           ## 🎉 智能体重管理 v2.0.${{ github.run_number }}
           
           ### ✨ 最新更新
+          - ✅ 修复趋势预测计算错误
           - ✅ 支持记录历史日期的体重
           - ✅ 日期和时间选择器
           - ✅ 智能重复检测和覆盖提示
@@ -107,7 +123,7 @@ jobs:
           - 🏆 成就系统(12个成就)
           - 💡 智能健康建议
           - 📊 BMI可视化分析
-          - 🔮 趋势预测
+          - 🔮 趋势预测（已修复）
           - 📋 周报/月报生成
           - 🌓 深色模式支持
           
@@ -118,12 +134,13 @@ jobs:
           4. 安装并开始使用
           
           ### 🔐 签名信息
-          - 此版本已使用 Release 签名
-          - 可以安全安装和使用
+          - 此版本使用固定签名密钥
+          - 可以直接覆盖安装旧版本
+          - 无需卸载重装
           
           ---
           
-          **注意**: 首次安装可能需要在设置中允许安装未知来源的应用。
+          **注意**: 如果之前安装的是不同签名的版本，需要先卸载再安装。
         files: platforms/android/app/build/outputs/apk/release/weight-tracker-v2.0.${{ github.run_number }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
