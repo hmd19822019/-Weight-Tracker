@@ -800,14 +800,46 @@ function renderGoalProgress() {
 
     // 预计完成日期
     if (APP.data.length >= 7) {
-        const recent = APP.data.slice(0, 7);
-        const avgChange = (recent[0].weight - recent[6].weight) / 7;
+        const recent = APP.data.slice(0, Math.min(14, APP.data.length));
+        
+        // 计算实际天数跨度
+        const firstDate = new Date(recent[0].date);
+        const lastDate = new Date(recent[recent.length - 1].date);
+        const daysDiff = Math.max(1, Math.round((firstDate - lastDate) / 86400000));
+        
+        // 计算日均变化
+        const totalChange = recent[0].weight - recent[recent.length - 1].weight;
+        const avgChange = totalChange / daysDiff;
+        
+        const remaining = current - target;
+        
+        // 判断是否能达到目标
         if (Math.abs(avgChange) > 0.01) {
-            const daysLeft = Math.abs((current - target) / avgChange);
-            const estDate = new Date(Date.now() + daysLeft * 86400000);
-            document.getElementById('goalEstimate').textContent = estDate.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+            // 检查趋势方向是否正确
+            const needDecrease = remaining > 0; // 需要减重
+            const isDecreasing = avgChange < 0; // 体重在下降
+            
+            if (needDecrease === isDecreasing) {
+                // 趋势方向正确，可以预测
+                const daysLeft = Math.abs(remaining / avgChange);
+                
+                if (daysLeft > 0 && daysLeft < 3650) { // 限制在10年内
+                    const estDate = new Date(Date.now() + daysLeft * 86400000);
+                    const estText = estDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
+                    document.getElementById('goalEstimate').textContent = estText;
+                } else {
+                    document.getElementById('goalEstimate').textContent = '遥遥无期';
+                }
+            } else {
+                // 趋势方向相反
+                if (needDecrease) {
+                    document.getElementById('goalEstimate').textContent = '体重上升中';
+                } else {
+                    document.getElementById('goalEstimate').textContent = '体重下降中';
+                }
+            }
         } else {
-            document.getElementById('goalEstimate').textContent = '保持当前';
+            document.getElementById('goalEstimate').textContent = '体重稳定';
         }
     } else {
         document.getElementById('goalEstimate').textContent = '数据不足';
