@@ -63,12 +63,12 @@ jobs:
           echo "Keystore generated and saved to keystore-base64.txt"
         fi
     
-    - name: Upload keystore info (first time only)
-      if: ${{ !secrets.KEYSTORE_BASE64 }}
+    - name: Upload keystore info
       uses: actions/upload-artifact@v3
       with:
         name: keystore-setup-info
         path: keystore-base64.txt
+        if-no-files-found: ignore
       
     - name: Create build.json
       run: |
