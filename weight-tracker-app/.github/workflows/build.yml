@@ -41,44 +41,89 @@ jobs:
     - name: Add Android platform
       run: cordova platform add android
       
-    - name: Build Android APK
+    - name: Generate signing key
+      run: |
+        keytool -genkey -v -keystore weight-tracker.keystore \
+          -alias weight-tracker \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass "WeightTracker2024" \
+          -keypass "WeightTracker2024" \
+          -dname "CN=Weight Tracker, OU=Development, O=Weight Tracker App, L=Shanghai, ST=Shanghai, C=CN"
+      
+    - name: Create build.json
+      run: |
+        cat > build.json << EOF
+        {
+          "android": {
+            "release": {
+              "keystore": "weight-tracker.keystore",
+              "storePassword": "WeightTracker2024",
+              "alias": "weight-tracker",
+              "password": "WeightTracker2024",
+              "keystoreType": ""
+            }
+          }
+        }
+        EOF
+        
+    - name: Build Android Release APK
       run: cordova build android --release
       
+    - name: Rename APK
+      run: |
+        cd platforms/android/app/build/outputs/apk/release
+        mv app-release.apk weight-tracker-v2.0.${{ github.run_number }}.apk
+        
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
-        name: app-release
-        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        name: weight-tracker-release-apk
+        path: platforms/android/app/build/outputs/apk/release/weight-tracker-v2.0.${{ github.run_number }}.apk
         
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v2.0.${{ github.run_number }}
-        name: Release v2.0.${{ github.run_number }}
+        name: 智能体重管理 v2.0.${{ github.run_number }}
         body: |
-          ## 🎉 智能体重管理 v2.0
+          ## 🎉 智能体重管理 v2.0.${{ github.run_number }}
           
-          ### ✨ 新增功能
-          - 体脂率记录和追踪
-          - 照片记录和对比
-          - 水分摄入追踪
-          - 连续记录天数
-          - 成就系统(12个成就)
-          - 智能健康建议
-          - BMI可视化分析
-          - 趋势预测
-          - 周报/月报生成
+          ### ✨ 最新更新
+          - ✅ 支持记录历史日期的体重
+          - ✅ 日期和时间选择器
+          - ✅ 智能重复检测和覆盖提示
+          - ✅ 编辑记录时可修改日期时间
+          - ✅ 数据导入保留原始日期
+          - ✅ 自动跳过重复记录
           
-          ### 🎨 UI优化
-          - 全新现代化设计
-          - 深色模式支持
-          - 流畅动画效果
+          ### 🎨 核心功能
+          - 📝 体重和体脂率记录
+          - 📸 照片记录和对比
+          - 💧 水分摄入追踪
+          - 🔥 连续记录天数
+          - 🏆 成就系统(12个成就)
+          - 💡 智能健康建议
+          - 📊 BMI可视化分析
+          - 🔮 趋势预测
+          - 📋 周报/月报生成
+          - 🌓 深色模式支持
           
-          ### 📊 统计增强
-          - 3种图表类型
-          - 体重+体脂双轴图
-          - 目标进度可视化
-        files: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          ### 📥 安装说明
+          1. 下载下方的 APK 文件
+          2. 传输到 Android 手机
+          3. 允许"安装未知来源应用"
+          4. 安装并开始使用
+          
+          ### 🔐 签名信息
+          - 此版本已使用 Release 签名
+          - 可以安全安装和使用
+          
+          ---
+          
+          **注意**: 首次安装可能需要在设置中允许安装未知来源的应用。
+        files: platforms/android/app/build/outputs/apk/release/weight-tracker-v2.0.${{ github.run_number }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
