@@ -1,0 +1,84 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+      
+    - name: Install Cordova
+      run: npm install -g cordova
+      
+    - name: Install dependencies
+      run: |
+        if [ -f package.json ]; then
+          npm install
+        fi
+        
+    - name: Add Android platform
+      run: cordova platform add android
+      
+    - name: Build Android APK
+      run: cordova build android --release
+      
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release
+        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v2.0.${{ github.run_number }}
+        name: Release v2.0.${{ github.run_number }}
+        body: |
+          ## 🎉 智能体重管理 v2.0
+          
+          ### ✨ 新增功能
+          - 体脂率记录和追踪
+          - 照片记录和对比
+          - 水分摄入追踪
+          - 连续记录天数
+          - 成就系统(12个成就)
+          - 智能健康建议
+          - BMI可视化分析
+          - 趋势预测
+          - 周报/月报生成
+          
+          ### 🎨 UI优化
+          - 全新现代化设计
+          - 深色模式支持
+          - 流畅动画效果
+          
+          ### 📊 统计增强
+          - 3种图表类型
+          - 体重+体脂双轴图
+          - 目标进度可视化
+        files: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
