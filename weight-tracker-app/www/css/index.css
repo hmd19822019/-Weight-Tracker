@@ -343,6 +343,18 @@ body {
     transition: var(--transition);
 }
 
+.input-group input[type="date"],
+.input-group input[type="time"] {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.input-group input[type="date"]::-webkit-calendar-picker-indicator,
+.input-group input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: opacity(0.6);
+}
+
 .input-group input:focus,
 .input-group select:focus {
     outline: none;

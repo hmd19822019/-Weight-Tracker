@@ -96,6 +96,14 @@
                 <!-- 快速输入区 -->
                 <div class="input-card">
                     <h3>快速记录</h3>
+                    <div class="input-group">
+                        <label for="recordDateInput">记录日期</label>
+                        <input type="date" id="recordDateInput" class="date-input">
+                    </div>
+                    <div class="input-group">
+                        <label for="recordTimeInput">记录时间</label>
+                        <input type="time" id="recordTimeInput" class="time-input">
+                    </div>
                     <div class="input-row">
                         <div class="input-group flex-1">
                             <label for="weightInput">体重 (kg)</label>
@@ -527,6 +535,14 @@
                 <button class="close-modal" id="closeEditModal">✕</button>
             </div>
             <div class="modal-body">
+                <div class="input-group">
+                    <label>记录日期</label>
+                    <input type="date" id="editDate" class="date-input">
+                </div>
+                <div class="input-group">
+                    <label>记录时间</label>
+                    <input type="time" id="editTime" class="time-input">
+                </div>
                 <div class="input-row">
                     <div class="input-group flex-1">
                         <label>体重 (kg)</label>

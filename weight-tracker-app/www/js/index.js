@@ -52,8 +52,25 @@ function initApp() {
     load();
     applyTheme();
     updateDate();
+    initDateTimeInputs();
     bindEvents();
     updateAllUI();
+}
+
+// ===================================
+// 初始化日期时间输入
+// ===================================
+function initDateTimeInputs() {
+    const now = new Date();
+    const dateInput = document.getElementById('recordDateInput');
+    const timeInput = document.getElementById('recordTimeInput');
+    
+    // 设置默认值为当前日期和时间
+    dateInput.value = now.toISOString().slice(0, 10);
+    timeInput.value = now.toTimeString().slice(0, 5);
+    
+    // 设置日期最大值为今天
+    dateInput.max = now.toISOString().slice(0, 10);
 }
 
 // ===================================
@@ -200,15 +217,52 @@ function saveRecord() {
     const w = parseFloat(document.getElementById('weightInput').value);
     const bf = parseFloat(document.getElementById('bodyFatInput').value);
     const note = document.getElementById('noteInput').value.trim();
+    const dateStr = document.getElementById('recordDateInput').value;
+    const timeStr = document.getElementById('recordTimeInput').value;
 
     if (isNaN(w) || w < 20 || w > 300) {
         toast('请输入有效的体重 (20-300kg)', 'error');
         return;
     }
 
+    if (!dateStr || !timeStr) {
+        toast('请选择日期和时间', 'error');
+        return;
+    }
+
+    // 组合日期和时间
+    const recordDate = new Date(dateStr + 'T' + timeStr);
+    
+    // 检查日期是否有效
+    if (isNaN(recordDate.getTime())) {
+        toast('日期时间格式无效', 'error');
+        return;
+    }
+
+    // 检查是否未来日期
+    if (recordDate > new Date()) {
+        toast('不能记录未来的日期', 'error');
+        return;
+    }
+
+    // 检查该日期是否已有记录
+    const existingRecord = APP.data.find(item => {
+        const itemDate = new Date(item.date);
+        return itemDate.toDateString() === recordDate.toDateString();
+    });
+
+    if (existingRecord) {
+        const dateDisplay = recordDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+        if (!confirm(`${dateDisplay} 已有记录（${existingRecord.weight.toFixed(1)}kg），是否覆盖？`)) {
+            return;
+        }
+        // 删除旧记录
+        APP.data = APP.data.filter(item => item.id !== existingRecord.id);
+    }
+
     const record = {
         id: Date.now(),
-        date: new Date().toISOString(),
+        date: recordDate.toISOString(),
         weight: w,
         bodyFat: isNaN(bf) ? null : bf,
         note: note,
@@ -225,8 +279,12 @@ function saveRecord() {
     document.getElementById('noteInput').value = '';
     removePhoto();
     document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('selected'));
+    
+    // 重置日期时间为当前
+    initDateTimeInputs();
 
-    toast('记录已保存 ✓', 'success');
+    const action = existingRecord ? '已更新' : '已保存';
+    toast(`记录${action} ✓`, 'success');
     checkNewAchievements();
     updateAllUI();
 }
@@ -1052,9 +1110,18 @@ function exportReport() {
 // ===================================
 function openEditModal(r) {
     APP.editId = r.id;
+    const recordDate = new Date(r.date);
+    
+    document.getElementById('editDate').value = recordDate.toISOString().slice(0, 10);
+    document.getElementById('editTime').value = recordDate.toTimeString().slice(0, 5);
     document.getElementById('editWeight').value = r.weight;
     document.getElementById('editBodyFat').value = r.bodyFat || '';
     document.getElementById('editNote').value = r.note || '';
+    
+    // 设置日期最大值为今天
+    const now = new Date();
+    document.getElementById('editDate').max = now.toISOString().slice(0, 10);
+    
     openModal('editModal');
 }
 
@@ -1070,12 +1137,47 @@ function saveEdit() {
     const w = parseFloat(document.getElementById('editWeight').value);
     const bf = parseFloat(document.getElementById('editBodyFat').value);
     const note = document.getElementById('editNote').value.trim();
+    const dateStr = document.getElementById('editDate').value;
+    const timeStr = document.getElementById('editTime').value;
 
     if (isNaN(w) || w < 20 || w > 300) {
         toast('请输入有效的体重', 'error');
         return;
     }
 
+    if (!dateStr || !timeStr) {
+        toast('请选择日期和时间', 'error');
+        return;
+    }
+
+    // 组合日期和时间
+    const recordDate = new Date(dateStr + 'T' + timeStr);
+    
+    if (isNaN(recordDate.getTime())) {
+        toast('日期时间格式无效', 'error');
+        return;
+    }
+
+    if (recordDate > new Date()) {
+        toast('不能设置未来的日期', 'error');
+        return;
+    }
+
+    // 检查新日期是否与其他记录冲突（排除当前记录）
+    const conflict = APP.data.find(item => {
+        if (item.id === APP.editId) return false;
+        const itemDate = new Date(item.date);
+        return itemDate.toDateString() === recordDate.toDateString();
+    });
+
+    if (conflict) {
+        const dateDisplay = recordDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+        if (!confirm(`${dateDisplay} 已有其他记录（${conflict.weight.toFixed(1)}kg），是否仍要修改？这将导致同一天有多条记录。`)) {
+            return;
+        }
+    }
+
+    r.date = recordDate.toISOString();
     r.weight = w;
     r.bodyFat = isNaN(bf) ? null : bf;
     r.note = note;
@@ -1223,6 +1325,7 @@ function importData() {
             const text = ev.target.result;
             const lines = text.split('\n');
             let count = 0;
+            let skipped = 0;
 
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -1232,9 +1335,30 @@ function importData() {
                 if (parts.length >= 2) {
                     const w = parseFloat(parts[1]);
                     if (!isNaN(w) && w >= 20 && w <= 300) {
+                        // 尝试解析日期
+                        let recordDate = new Date();
+                        if (parts[0]) {
+                            const parsedDate = new Date(parts[0]);
+                            if (!isNaN(parsedDate.getTime())) {
+                                recordDate = parsedDate;
+                            }
+                        }
+
+                        // 检查是否已存在该日期的记录
+                        const existing = APP.data.find(r => {
+                            const d1 = new Date(r.date).toDateString();
+                            const d2 = recordDate.toDateString();
+                            return d1 === d2;
+                        });
+
+                        if (existing) {
+                            skipped++;
+                            continue;
+                        }
+
                         APP.data.push({
                             id: Date.now() + i,
-                            date: new Date().toISOString(),
+                            date: recordDate.toISOString(),
                             weight: w,
                             bodyFat: parseFloat(parts[2]) || null,
                             note: parts[3] || '',
@@ -1249,7 +1373,11 @@ function importData() {
                 sortData();
                 save();
                 updateAllUI();
-                toast(`成功导入 ${count} 条记录`, 'success');
+                let msg = `成功导入 ${count} 条记录`;
+                if (skipped > 0) {
+                    msg += `，跳过 ${skipped} 条重复记录`;
+                }
+                toast(msg, 'success');
             } else {
                 toast('未找到有效数据', 'error');
             }
