@@ -4,80 +4,581 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="format-detection" content="telephone=no">
-    <title>体重记录</title>
+    <title>体重记录 - 智能健康管理</title>
     <link rel="stylesheet" href="css/index.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>📊 体重记录</h1>
-            <p class="date" id="currentDate"></p>
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">📊 智能体重管理</h1>
+                <div class="header-actions">
+                    <button class="header-btn" id="achievementBtn" title="成就">
+                        <span class="achievement-icon">🏆</span>
+                        <span class="achievement-badge" id="achievementBadge" style="display: none;">0</span>
+                    </button>
+                    <button class="header-btn" id="backupBtn" title="备份">
+                        <span class="backup-icon">💾</span>
+                    </button>
+                    <button class="header-btn" id="settingsBtn" title="设置">
+                        <span class="settings-icon">⚙️</span>
+                    </button>
+                </div>
+            </div>
         </header>
 
-        <main>
-            <!-- 输入区域 -->
-            <section class="input-section">
-                <div class="input-group">
-                    <label for="weightInput">今日体重</label>
-                    <div class="weight-input-wrapper">
-                        <input type="number" id="weightInput" step="0.1" min="20" max="300" placeholder="60.5">
-                        <span class="unit">kg</span>
+        <!-- Tab 导航 -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="record">
+                <span class="tab-icon">📝</span>
+                <span class="tab-text">记录</span>
+            </button>
+            <button class="tab-btn" data-tab="history">
+                <span class="tab-icon">📋</span>
+                <span class="tab-text">历史</span>
+            </button>
+            <button class="tab-btn" data-tab="stats">
+                <span class="tab-icon">📊</span>
+                <span class="tab-text">统计</span>
+            </button>
+            <button class="tab-btn" data-tab="insights">
+                <span class="tab-icon">💡</span>
+                <span class="tab-text">洞察</span>
+            </button>
+        </nav>
+
+        <!-- Tab 内容区域 -->
+        <main class="tab-content">
+            <!-- Tab 1: 记录页 -->
+            <div class="tab-panel active" id="record-tab">
+                <!-- 当前状态卡片 -->
+                <div class="status-card">
+                    <div class="status-header">
+                        <div>
+                            <h2>今日状态</h2>
+                            <div class="date-display" id="currentDate"></div>
+                        </div>
+                        <div class="streak-display" id="streakDisplay">
+                            <span class="streak-icon">🔥</span>
+                            <span class="streak-count" id="streakCount">0</span>
+                            <span class="streak-label">天连续</span>
+                        </div>
+                    </div>
+                    <div class="status-content">
+                        <div class="current-weight-display">
+                            <div class="weight-value" id="todayWeight">--</div>
+                            <div class="weight-label">当前体重</div>
+                            <div class="weight-change" id="todayChange"></div>
+                        </div>
+                        <div class="quick-stats">
+                            <div class="quick-stat">
+                                <div class="stat-value" id="weekChange">--</div>
+                                <div class="stat-label">本周</div>
+                            </div>
+                            <div class="quick-stat">
+                                <div class="stat-value" id="monthChange">--</div>
+                                <div class="stat-label">本月</div>
+                            </div>
+                            <div class="quick-stat">
+                                <div class="stat-value" id="bmiValue">--</div>
+                                <div class="stat-label">BMI</div>
+                            </div>
+                            <div class="quick-stat">
+                                <div class="stat-value" id="bodyFatValue">--</div>
+                                <div class="stat-label">体脂率</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速输入区 -->
+                <div class="input-card">
+                    <h3>快速记录</h3>
+                    <div class="input-row">
+                        <div class="input-group flex-1">
+                            <label for="weightInput">体重 (kg)</label>
+                            <div class="weight-input-wrapper">
+                                <input type="number" id="weightInput" step="0.1" min="20" max="300" placeholder="60.5">
+                                <span class="unit">kg</span>
+                            </div>
+                        </div>
+                        <div class="input-group flex-1">
+                            <label for="bodyFatInput">体脂率 (%)</label>
+                            <div class="weight-input-wrapper">
+                                <input type="number" id="bodyFatInput" step="0.1" min="0" max="100" placeholder="20.0">
+                                <span class="unit">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="noteInput">备注</label>
+                        <input type="text" id="noteInput" placeholder="例如：早上测量、饭后测量...">
+                    </div>
+                    <div class="input-group">
+                        <label for="photoInput">添加照片（可选）</label>
+                        <div class="photo-input-wrapper">
+                            <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                            <button class="btn-photo" id="photoBtn">
+                                <span class="photo-icon">📷</span>
+                                <span>添加照片</span>
+                            </button>
+                            <div class="photo-preview" id="photoPreview" style="display: none;">
+                                <img id="photoPreviewImg" src="" alt="预览">
+                                <button class="photo-remove" id="photoRemove">✕</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-primary" id="saveBtn">
+                        <span class="btn-icon">💾</span>
+                        <span>保存记录</span>
+                    </button>
+                </div>
+
+                <!-- 快速记录模板 -->
+                <div class="quick-templates">
+                    <h3>快速记录</h3>
+                    <div class="template-grid">
+                        <button class="template-btn" data-template="morning">
+                            <span class="template-icon">🌅</span>
+                            <span>早上</span>
+                        </button>
+                        <button class="template-btn" data-template="noon">
+                            <span class="template-icon">☀️</span>
+                            <span>中午</span>
+                        </button>
+                        <button class="template-btn" data-template="evening">
+                            <span class="template-icon">🌙</span>
+                            <span>晚上</span>
+                        </button>
+                        <button class="template-btn" data-template="before-exercise">
+                            <span class="template-icon">💪</span>
+                            <span>运动前</span>
+                        </button>
+                        <button class="template-btn" data-template="after-exercise">
+                            <span class="template-icon">🏃</span>
+                            <span>运动后</span>
+                        </button>
+                        <button class="template-btn" data-template="medical">
+                            <span class="template-icon">⚕️</span>
+                            <span>体检</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 今日水分摄入 -->
+                <div class="water-intake-card">
+                    <h3>今日水分摄入</h3>
+                    <div class="water-progress">
+                        <div class="water-progress-bar">
+                            <div class="water-progress-fill" id="waterProgressFill"></div>
+                        </div>
+                        <div class="water-info">
+                            <span id="waterCurrent">0</span> / <span id="waterTarget">2000</span> ml
+                        </div>
+                    </div>
+                    <div class="water-buttons">
+                        <button class="water-btn" data-amount="250">250ml</button>
+                        <button class="water-btn" data-amount="500">500ml</button>
+                        <button class="water-btn" data-amount="1000">1L</button>
+                        <button class="water-btn-reset" id="waterReset">重置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: 历史页 -->
+            <div class="tab-panel" id="history-tab">
+                <!-- 筛选器 -->
+                <div class="filter-card">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">全部</button>
+                        <button class="filter-btn" data-filter="today">今天</button>
+                        <button class="filter-btn" data-filter="week">本周</button>
+                        <button class="filter-btn" data-filter="month">本月</button>
+                        <button class="filter-btn" data-filter="photos">有照片</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="🔍 搜索备注...">
+                    </div>
+                </div>
+
+                <!-- 历史记录列表 -->
+                <div class="history-container" id="historyContainer">
+                    <!-- 按月份分组的历史记录将在这里动态生成 -->
+                </div>
+            </div>
+
+            <!-- Tab 3: 统计页 -->
+            <div class="tab-panel" id="stats-tab">
+                <!-- 图表控制 -->
+                <div class="chart-controls">
+                    <div class="chart-type-selector">
+                        <button class="chart-type-btn active" data-chart="line">折线图</button>
+                        <button class="chart-type-btn" data-chart="bar">柱状图</button>
+                        <button class="chart-type-btn" data-chart="combined">组合图</button>
+                    </div>
+                    <div class="time-range-selector">
+                        <button class="time-range-btn" data-range="7">7天</button>
+                        <button class="time-range-btn active" data-range="30">30天</button>
+                        <button class="time-range-btn" data-range="90">90天</button>
+                        <button class="time-range-btn" data-range="all">全部</button>
+                    </div>
+                </div>
+
+                <!-- 主图表 -->
+                <div class="chart-main-card">
+                    <div class="chart-header">
+                        <h3>体重趋势</h3>
+                        <div class="chart-info">
+                            <span id="trendInfo">加载中...</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 统计数据 -->
+                <div class="stats-grid">
+                    <div class="stat-card primary">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="avgWeight">--</div>
+                            <div class="stat-label">平均体重</div>
+                            <div class="stat-detail" id="avgWeightDetail"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="weightTrend">--</div>
+                            <div class="stat-label">总变化</div>
+                            <div class="stat-detail" id="trendDetail"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon">🎪</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="weightRange">--</div>
+                            <div class="stat-label">波动范围</div>
+                            <div class="stat-detail" id="rangeDetail"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="recordCount">--</div>
+                            <div class="stat-label">记录总数</div>
+                            <div class="stat-detail" id="recordDetail"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 目标进度 -->
+                <div class="goal-progress-card" id="goalProgressCard" style="display: none;">
+                    <h3>🎯 目标进度</h3>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <div class="progress-text">
+                                <span class="progress-label">起始</span>
+                                <span id="goalStart">--</span>
+                                <span class="progress-arrow">→</span>
+                                <span class="progress-label">当前</span>
+                                <span id="goalCurrent">--</span>
+                                <span class="progress-arrow">→</span>
+                                <span class="progress-label">目标</span>
+                                <span id="goalTarget">--</span>
+                            </div>
+                            <div class="progress-percentage" id="goalPercentage">0%</div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="goalProgressBar">
+                                <div class="progress-fill" id="goalProgressFill"></div>
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <div class="progress-detail-item">
+                                <span class="detail-label">已完成</span>
+                                <span class="detail-value" id="goalCompleted">--</span>
+                            </div>
+                            <div class="progress-detail-item">
+                                <span class="detail-label">剩余</span>
+                                <span class="detail-value" id="goalRemaining">--</span>
+                            </div>
+                            <div class="progress-detail-item">
+                                <span class="detail-label">预计完成</span>
+                                <span class="detail-value" id="goalEstimate">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 周报/月报 -->
+                <div class="report-card">
+                    <h3>📋 报告生成</h3>
+                    <div class="report-buttons">
+                        <button class="btn-report" id="weeklyReportBtn">
+                            <span class="report-icon">📅</span>
+                            <span>周报</span>
+                        </button>
+                        <button class="btn-report" id="monthlyReportBtn">
+                            <span class="report-icon">📆</span>
+                            <span>月报</span>
+                        </button>
+                        <button class="btn-report" id="customReportBtn">
+                            <span class="report-icon">📊</span>
+                            <span>自定义</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: 洞察页 -->
+            <div class="tab-panel" id="insights-tab">
+                <!-- 健康建议 -->
+                <div class="insights-card">
+                    <h3>💡 智能健康建议</h3>
+                    <div class="insights-content" id="insightsContent">
+                        <div class="insight-loading">分析中...</div>
+                    </div>
+                </div>
+
+                <!-- BMI分析 -->
+                <div class="bmi-analysis-card">
+                    <h3>📊 BMI 分析</h3>
+                    <div class="bmi-chart">
+                        <div class="bmi-scale">
+                            <div class="bmi-range underweight">
+                                <span class="range-label">偏瘦</span>
+                                <span class="range-value">&lt;18.5</span>
+                            </div>
+                            <div class="bmi-range normal">
+                                <span class="range-label">正常</span>
+                                <span class="range-value">18.5-24</span>
+                            </div>
+                            <div class="bmi-range overweight">
+                                <span class="range-label">偏胖</span>
+                                <span class="range-value">24-28</span>
+                            </div>
+                            <div class="bmi-range obese">
+                                <span class="range-label">肥胖</span>
+                                <span class="range-value">&gt;28</span>
+                            </div>
+                        </div>
+                        <div class="bmi-indicator" id="bmiIndicator">
+                            <div class="bmi-marker" id="bmiMarker"></div>
+                        </div>
+                        <div class="bmi-current">
+                            <span class="bmi-label">当前BMI</span>
+                            <span class="bmi-value" id="currentBMI">--</span>
+                            <span class="bmi-status" id="bmiStatus">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 照片对比 -->
+                <div class="photo-comparison-card">
+                    <h3>📸 照片对比</h3>
+                    <div class="photo-comparison-content" id="photoComparisonContent">
+                        <div class="photo-empty">暂无照片记录</div>
+                    </div>
+                </div>
+
+                <!-- 趋势预测 -->
+                <div class="prediction-card">
+                    <h3>🔮 趋势预测</h3>
+                    <div class="prediction-content" id="predictionContent">
+                        <div class="prediction-loading">计算中...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 设置面板 -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-header">
+                <h2>⚙️ 设置</h2>
+                <button class="close-settings" id="closeSettings">✕</button>
+            </div>
+            <div class="settings-content">
+                <div class="settings-section">
+                    <h3>个人信息</h3>
+                    <div class="setting-item">
+                        <label>身高 (cm)</label>
+                        <div class="input-group">
+                            <input type="number" id="userHeight" step="1" min="100" max="250" placeholder="175">
+                            <span class="unit">cm</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>性别</label>
+                        <select id="userGender">
+                            <option value="male">男</option>
+                            <option value="female">女</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>年龄</label>
+                        <input type="number" id="userAge" min="1" max="150" placeholder="25">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>目标设置</h3>
+                    <div class="setting-item">
+                        <label>目标体重 (kg)</label>
+                        <div class="input-group">
+                            <input type="number" id="targetWeight" step="0.1" min="20" max="300" placeholder="60.0">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>目标日期</label>
+                        <input type="date" id="targetDate">
+                    </div>
+                    <div class="setting-item">
+                        <label>每日水分目标 (ml)</label>
+                        <input type="number" id="waterTarget" step="100" min="500" max="5000" value="2000">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>数据管理</h3>
+                    <div class="setting-actions">
+                        <button class="btn-secondary" id="importBtn">
+                            <span class="action-icon">📥</span>
+                            导入数据
+                        </button>
+                        <button class="btn-secondary" id="exportBtn">
+                            <span class="action-icon">📤</span>
+                            导出数据
+                        </button>
+                        <button class="btn-secondary" id="autoBackupBtn">
+                            <span class="action-icon">💾</span>
+                            自动备份
+                        </button>
+                        <button class="btn-danger" id="clearAllBtn">
+                            <span class="action-icon">🗑️</span>
+                            清空数据
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>提醒设置</h3>
+                    <div class="setting-item">
+                        <label>每日提醒时间</label>
+                        <input type="time" id="reminderTime" value="20:00">
+                    </div>
+                    <div class="setting-item">
+                        <label>提醒频率</label>
+                        <select id="reminderFrequency">
+                            <option value="daily">每天</option>
+                            <option value="weekly">每周</option>
+                            <option value="never">不提醒</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>显示设置</h3>
+                    <div class="setting-item">
+                        <label>主题</label>
+                        <select id="themeSelect">
+                            <option value="light">浅色</option>
+                            <option value="dark">深色</option>
+                            <option value="auto">跟随系统</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>关于</h3>
+                    <div class="about-info">
+                        <p>版本: 2.0.0</p>
+                        <p>智能体重管理应用</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成就面板 -->
+        <div class="achievement-panel" id="achievementPanel">
+            <div class="achievement-header">
+                <h2>🏆 成就</h2>
+                <button class="close-achievement" id="closeAchievement">✕</button>
+            </div>
+            <div class="achievement-content" id="achievementContent">
+                <!-- 成就列表将在这里动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 编辑记录模态框 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑记录</h3>
+                <button class="close-modal" id="closeEditModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-row">
+                    <div class="input-group flex-1">
+                        <label>体重 (kg)</label>
+                        <div class="weight-input-wrapper">
+                            <input type="number" id="editWeight" step="0.1" min="20" max="300">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                    <div class="input-group flex-1">
+                        <label>体脂率 (%)</label>
+                        <div class="weight-input-wrapper">
+                            <input type="number" id="editBodyFat" step="0.1" min="0" max="100">
+                            <span class="unit">%</span>
+                        </div>
                     </div>
                 </div>
                 <div class="input-group">
-                    <label for="noteInput">备注（可选）</label>
-                    <input type="text" id="noteInput" placeholder="例如：早上测量、饭后测量...">
+                    <label>备注</label>
+                    <input type="text" id="editNote" placeholder="备注信息">
                 </div>
-                <button class="btn-primary" id="saveBtn">保存记录</button>
-            </section>
-
-            <!-- 统计信息 -->
-            <section class="stats-section" id="statsSection" style="display: none;">
-                <div class="stat-card">
-                    <div class="stat-value" id="currentWeight">--</div>
-                    <div class="stat-label">当前体重</div>
+                <div class="modal-actions">
+                    <button class="btn-primary" id="saveEditBtn">保存</button>
+                    <button class="btn-danger" id="deleteEditBtn">删除</button>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="weightChange">--</div>
-                    <div class="stat-label">较上次</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="avgWeight">--</div>
-                    <div class="stat-label">平均体重</div>
-                </div>
-            </section>
-
-            <!-- 图表 -->
-            <section class="chart-section" id="chartSection" style="display: none;">
-                <h2>体重趋势</h2>
-                <div class="chart-container">
-                    <canvas id="weightChart"></canvas>
-                </div>
-            </section>
-
-            <!-- 历史记录 -->
-            <section class="history-section" id="historySection" style="display: none;">
-                <div class="history-header">
-                    <h2>历史记录</h2>
-                    <button class="btn-secondary" id="exportBtn">导出</button>
-                    <button class="btn-danger" id="clearBtn">清空</button>
-                </div>
-                <div class="history-list" id="historyList">
-                    <!-- 动态生成 -->
-                </div>
-            </section>
-
-            <!-- 空状态 -->
-            <section class="empty-state" id="emptyState">
-                <div class="empty-icon">📝</div>
-                <p>还没有记录</p>
-                <p>输入体重开始记录吧！</p>
-            </section>
-        </main>
+            </div>
+        </div>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <!-- 报告模态框 -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="reportTitle">健康报告</h3>
+                <button class="close-modal" id="closeReportModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-content" id="reportContent">
+                    <!-- 报告内容将在这里动态生成 -->
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-primary" id="shareReportBtn">
+                        <span class="btn-icon">📤</span>
+                        <span>分享报告</span>
+                    </button>
+                    <button class="btn-secondary" id="exportReportBtn">
+                        <span class="btn-icon">📥</span>
+                        <span>导出PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="cordova.js"></script>
     <script src="js/index.js"></script>
