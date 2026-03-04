@@ -992,25 +992,45 @@ function renderPrediction() {
         return;
     }
 
-    const recent = APP.data.slice(0, 14);
-    const avgChange = (recent[0].weight - recent[recent.length - 1].weight) / recent.length;
+    // 取最近14天的数据（如果有的话）
+    const recent = APP.data.slice(0, Math.min(14, APP.data.length));
+    
+    // 计算实际的天数跨度
+    const firstDate = new Date(recent[0].date);
+    const lastDate = new Date(recent[recent.length - 1].date);
+    const daysDiff = Math.max(1, Math.round((firstDate - lastDate) / 86400000));
+    
+    // 计算日均变化（最新体重 - 最旧体重）/ 实际天数
+    const totalChange = recent[0].weight - recent[recent.length - 1].weight;
+    const avgChange = totalChange / daysDiff;
 
     const predictions = [];
     [7, 14, 30].forEach(days => {
-        const pred = recent[0].weight - avgChange * days;
+        // 预测 = 当前体重 + (日均变化 * 未来天数)
+        const pred = recent[0].weight + (avgChange * days);
         predictions.push({ days, weight: pred });
     });
 
+    // 判断趋势方向
+    let trendText = '';
+    if (avgChange > 0.05) {
+        trendText = '上升';
+    } else if (avgChange < -0.05) {
+        trendText = '下降';
+    } else {
+        trendText = '稳定';
+    }
+
     c.innerHTML = `
         <div style="font-size: 13px; color: var(--text-2); line-height: 1.8;">
-            <p style="margin-bottom: 12px;">基于近期趋势（日均变化 <strong>${avgChange > 0 ? '+' : ''}${avgChange.toFixed(2)}kg</strong>），预测：</p>
+            <p style="margin-bottom: 12px;">基于近 <strong>${daysDiff}</strong> 天数据（日均变化 <strong>${avgChange > 0 ? '+' : ''}${avgChange.toFixed(3)}kg</strong>，趋势<strong>${trendText}</strong>），预测：</p>
             ${predictions.map(p => `
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
                     <span>${p.days}天后</span>
                     <strong style="color: var(--primary);">${p.weight.toFixed(1)} kg</strong>
                 </div>
             `).join('')}
-            <p style="margin-top: 12px; font-size: 11px; color: var(--text-3);">* 预测仅供参考，实际结果受多种因素影响</p>
+            <p style="margin-top: 12px; font-size: 11px; color: var(--text-3);">* 预测基于线性趋势，实际结果受饮食、运动等多种因素影响</p>
         </div>
     `;
 }
