@@ -51,6 +51,3 @@ jobs:
           name: weight-tracker-debug-apk
           path: weight-tracker-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-提交文件：
-滚动到底部
-点击绿色按钮 "Commit changes"
