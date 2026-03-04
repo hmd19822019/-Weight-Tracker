@@ -1,0 +1,92 @@
+From 26614a6f76ad4adcf6f7c0c86e4044571d1d0fd1 Mon Sep 17 00:00:00 2001
+From: unknown <mdhuang@iflytek.com>
+Date: Wed, 4 Mar 2026 23:35:05 +0800
+Subject: [PATCH] =?UTF-8?q?fix:=20=E4=BF=AE=E5=A4=8D=E7=9B=AE=E6=A0=87?=
+ =?UTF-8?q?=E8=BF=9B=E5=BA=A6=E9=A2=84=E8=AE=A1=E5=AE=8C=E6=88=90=E6=97=B6?=
+ =?UTF-8?q?=E9=97=B4=E8=AE=A1=E7=AE=97=E9=94=99=E8=AF=AF?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+🐛 问题修复:
+- 使用实际天数而非记录数计算日均变化
+- 判断趋势方向是否与目标一致
+- 处理趋势相反的情况（体重上升但目标减重）
+- 限制预测时间在合理范围内（10年内）
+- 显示年份信息，更清晰
+
+🔧 改进:
+- 体重稳定时显示'体重稳定'
+- 趋势相反时显示'体重上升中'或'体重下降中'
+- 预测时间过长时显示'遥遥无期'
+- 基于最近14天数据（更准确）
+
+📊 计算逻辑:
+- 日均变化 = (最新体重 - 最旧体重) / 实际天数
+- 剩余变化 = 当前体重 - 目标体重
+- 预计天数 = 剩余变化 / 日均变化
+- 检查趋势方向是否正确
+---
+ weight-tracker-app/www/js/index.js | 44 ++++++++++++++++++++++++++----
+ 1 file changed, 38 insertions(+), 6 deletions(-)
+
+diff --git a/weight-tracker-app/www/js/index.js b/weight-tracker-app/www/js/index.js
+index 1b891b3..68b2bf4 100644
+--- a/weight-tracker-app/www/js/index.js
++++ b/weight-tracker-app/www/js/index.js
+@@ -800,14 +800,46 @@ function renderGoalProgress() {
+ 
+     // 预计完成日期
+     if (APP.data.length >= 7) {
+-        const recent = APP.data.slice(0, 7);
+-        const avgChange = (recent[0].weight - recent[6].weight) / 7;
++        const recent = APP.data.slice(0, Math.min(14, APP.data.length));
++        
++        // 计算实际天数跨度
++        const firstDate = new Date(recent[0].date);
++        const lastDate = new Date(recent[recent.length - 1].date);
++        const daysDiff = Math.max(1, Math.round((firstDate - lastDate) / 86400000));
++        
++        // 计算日均变化
++        const totalChange = recent[0].weight - recent[recent.length - 1].weight;
++        const avgChange = totalChange / daysDiff;
++        
++        const remaining = current - target;
++        
++        // 判断是否能达到目标
+         if (Math.abs(avgChange) > 0.01) {
+-            const daysLeft = Math.abs((current - target) / avgChange);
+-            const estDate = new Date(Date.now() + daysLeft * 86400000);
+-            document.getElementById('goalEstimate').textContent = estDate.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
++            // 检查趋势方向是否正确
++            const needDecrease = remaining > 0; // 需要减重
++            const isDecreasing = avgChange < 0; // 体重在下降
++            
++            if (needDecrease === isDecreasing) {
++                // 趋势方向正确，可以预测
++                const daysLeft = Math.abs(remaining / avgChange);
++                
++                if (daysLeft > 0 && daysLeft < 3650) { // 限制在10年内
++                    const estDate = new Date(Date.now() + daysLeft * 86400000);
++                    const estText = estDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
++                    document.getElementById('goalEstimate').textContent = estText;
++                } else {
++                    document.getElementById('goalEstimate').textContent = '遥遥无期';
++                }
++            } else {
++                // 趋势方向相反
++                if (needDecrease) {
++                    document.getElementById('goalEstimate').textContent = '体重上升中';
++                } else {
++                    document.getElementById('goalEstimate').textContent = '体重下降中';
++                }
++            }
+         } else {
+-            document.getElementById('goalEstimate').textContent = '保持当前';
++            document.getElementById('goalEstimate').textContent = '体重稳定';
+         }
+     } else {
+         document.getElementById('goalEstimate').textContent = '数据不足';
+-- 
+2.48.1.windows.1
+
