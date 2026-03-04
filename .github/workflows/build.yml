@@ -1,0 +1,56 @@
+name: Build Weight Tracker Android App
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd weight-tracker-app
+          npm install
+
+      - name: Install Cordova CLI
+        run: npm install -g cordova
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Add Android platform
+        run: |
+          cd weight-tracker-app
+          cordova platform add android
+
+      - name: Build Debug APK
+        run: |
+          cd weight-tracker-app
+          cordova build android --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: weight-tracker-debug-apk
+          path: weight-tracker-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+提交文件：
+滚动到底部
+点击绿色按钮 "Commit changes"
