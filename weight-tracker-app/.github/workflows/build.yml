@@ -41,64 +41,19 @@ jobs:
     - name: Add Android platform
       run: cordova platform add android
       
-    - name: Setup signing key
-      run: |
-        # 如果GitHub Secrets中有密钥，使用它；否则生成新的
-        if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-          echo "Using keystore from secrets"
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > weight-tracker.keystore
-        else
-          echo "Generating new keystore (first time setup)"
-          keytool -genkey -v -keystore weight-tracker.keystore \
-            -alias weight-tracker \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass "WeightTracker2024" \
-            -keypass "WeightTracker2024" \
-            -dname "CN=Weight Tracker, OU=Development, O=Weight Tracker App, L=Shanghai, ST=Shanghai, C=CN"
-          
-          # 保存base64编码到文件
-          base64 -w 0 weight-tracker.keystore > keystore-base64.txt
-          echo "Keystore generated and saved to keystore-base64.txt"
-        fi
-    
-    - name: Upload keystore info
-      uses: actions/upload-artifact@v3
-      with:
-        name: keystore-setup-info
-        path: keystore-base64.txt
-        if-no-files-found: ignore
-      
-    - name: Create build.json
-      run: |
-        cat > build.json << EOF
-        {
-          "android": {
-            "release": {
-              "keystore": "weight-tracker.keystore",
-              "storePassword": "${{ secrets.KEYSTORE_PASSWORD || 'WeightTracker2024' }}",
-              "alias": "weight-tracker",
-              "password": "${{ secrets.KEY_PASSWORD || 'WeightTracker2024' }}",
-              "keystoreType": ""
-            }
-          }
-        }
-        EOF
-        
-    - name: Build Android Release APK
-      run: cordova build android --release
+    - name: Build Android Debug APK
+      run: cordova build android --debug
       
     - name: Rename APK
       run: |
-        cd platforms/android/app/build/outputs/apk/release
-        mv app-release.apk weight-tracker-v2.0.${{ github.run_number }}.apk
+        cd platforms/android/app/build/outputs/apk/debug
+        mv app-debug.apk weight-tracker-v2.0.${{ github.run_number }}.apk
         
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
-        name: weight-tracker-release-apk
-        path: platforms/android/app/build/outputs/apk/release/weight-tracker-v2.0.${{ github.run_number }}.apk
+        name: weight-tracker-debug-apk
+        path: platforms/android/app/build/outputs/apk/debug/weight-tracker-v2.0.${{ github.run_number }}.apk
         
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
@@ -144,6 +99,6 @@ jobs:
           ---
           
           **注意**: 如果之前安装的是不同签名的版本，需要先卸载再安装。
-        files: platforms/android/app/build/outputs/apk/release/weight-tracker-v2.0.${{ github.run_number }}.apk
+        files: platforms/android/app/build/outputs/apk/debug/weight-tracker-v2.0.${{ github.run_number }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
