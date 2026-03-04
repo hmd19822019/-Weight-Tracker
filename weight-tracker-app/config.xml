@@ -1,13 +1,28 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.example.weighttracker" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>体重记录</name>
+<widget id="com.weighttracker.app" version="2.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>智能体重管理</name>
     <description>
-        A sample Apache Cordova application that responds to the deviceready event.
+        智能体重管理应用 - 记录体重、体脂率，追踪健康趋势，提供个性化健康建议
     </description>
-    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
-        Apache Cordova Team
+    <author email="support@weighttracker.app" href="https://github.com/hmd19822019/-Weight-Tracker">
+        Weight Tracker Team
     </author>
     <content src="index.html" />
+    
+    <!-- 图标配置 -->
+    <icon src="res/icon.png" />
+    
+    <!-- Android 图标 -->
+    <platform name="android">
+        <icon density="ldpi" src="res/android/ldpi.png" />
+        <icon density="mdpi" src="res/android/mdpi.png" />
+        <icon density="hdpi" src="res/android/hdpi.png" />
+        <icon density="xhdpi" src="res/android/xhdpi.png" />
+        <icon density="xxhdpi" src="res/android/xxhdpi.png" />
+        <icon density="xxxhdpi" src="res/android/xxxhdpi.png" />
+    </platform>
+    
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 </widget>
+

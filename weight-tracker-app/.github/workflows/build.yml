@@ -32,6 +32,16 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
       
+    - name: Install cordova-res for icon generation
+      run: npm install -g cordova-res
+      
+    - name: Generate icons from SVG
+      run: |
+        if [ -f icon.svg ]; then
+          cordova-res android --icon-source icon.svg --skip-config
+        fi
+      continue-on-error: true
+      
     - name: Install dependencies
       run: |
         if [ -f package.json ]; then

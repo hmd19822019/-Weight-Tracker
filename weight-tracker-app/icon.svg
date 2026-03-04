@@ -1,0 +1,53 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景渐变 -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90D9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#357ABD;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="scaleGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#E8F4FD;stop-opacity:0.95" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 圆角背景 -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGradient)"/>
+  
+  <!-- 体重秤主体 -->
+  <g transform="translate(256, 280)">
+    <!-- 秤面 -->
+    <ellipse cx="0" cy="0" rx="140" ry="120" fill="url(#scaleGradient)" opacity="0.95"/>
+    <ellipse cx="0" cy="0" rx="130" ry="110" fill="none" stroke="#357ABD" stroke-width="3" opacity="0.3"/>
+    
+    <!-- 显示屏 -->
+    <rect x="-80" y="-40" width="160" height="50" rx="8" fill="#2C3E50" opacity="0.8"/>
+    
+    <!-- 数字显示 -->
+    <text x="0" y="-5" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#4ADE80" text-anchor="middle">65.5</text>
+    <text x="0" y="20" font-family="Arial, sans-serif" font-size="14" fill="#94A3B8" text-anchor="middle">kg</text>
+    
+    <!-- 秤面纹理 -->
+    <circle cx="-60" cy="50" r="4" fill="#357ABD" opacity="0.2"/>
+    <circle cx="-30" cy="60" r="4" fill="#357ABD" opacity="0.2"/>
+    <circle cx="0" cy="65" r="4" fill="#357ABD" opacity="0.2"/>
+    <circle cx="30" cy="60" r="4" fill="#357ABD" opacity="0.2"/>
+    <circle cx="60" cy="50" r="4" fill="#357ABD" opacity="0.2"/>
+  </g>
+  
+  <!-- 趋势图标 -->
+  <g transform="translate(256, 140)">
+    <!-- 上升箭头 -->
+    <path d="M -30,-20 L 0,-50 L 30,-20 L 20,-20 L 20,10 L -20,10 L -20,-20 Z" 
+          fill="#4ADE80" opacity="0.9"/>
+    <!-- 图表线条 -->
+    <path d="M -60,30 L -40,20 L -20,25 L 0,10 L 20,15 L 40,5 L 60,0" 
+          fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  </g>
+  
+  <!-- 装饰圆点 -->
+  <circle cx="100" cy="100" r="8" fill="#FFFFFF" opacity="0.2"/>
+  <circle cx="412" cy="100" r="8" fill="#FFFFFF" opacity="0.2"/>
+  <circle cx="100" cy="412" r="8" fill="#FFFFFF" opacity="0.2"/>
+  <circle cx="412" cy="412" r="8" fill="#FFFFFF" opacity="0.2"/>
+</svg>
