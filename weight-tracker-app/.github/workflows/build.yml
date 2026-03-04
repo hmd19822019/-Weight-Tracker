@@ -58,14 +58,17 @@ jobs:
             -keypass "WeightTracker2024" \
             -dname "CN=Weight Tracker, OU=Development, O=Weight Tracker App, L=Shanghai, ST=Shanghai, C=CN"
           
-          # 输出base64编码的密钥，用于添加到GitHub Secrets
-          echo "=========================================="
-          echo "IMPORTANT: Add this to GitHub Secrets as KEYSTORE_BASE64:"
-          echo "=========================================="
-          base64 -w 0 weight-tracker.keystore
-          echo ""
-          echo "=========================================="
+          # 保存base64编码到文件
+          base64 -w 0 weight-tracker.keystore > keystore-base64.txt
+          echo "Keystore generated and saved to keystore-base64.txt"
         fi
+    
+    - name: Upload keystore info (first time only)
+      if: ${{ !secrets.KEYSTORE_BASE64 }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: keystore-setup-info
+        path: keystore-base64.txt
       
     - name: Create build.json
       run: |
