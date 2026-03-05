@@ -11,9 +11,4 @@
     
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
-    
-    <!-- Android 配置 -->
-    <platform name="android">
-        <preference name="AndroidPersistentFileLocation" value="Compatibility" />
-    </platform>
 </widget>

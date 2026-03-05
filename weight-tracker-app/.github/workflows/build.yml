@@ -41,10 +41,6 @@ jobs:
     - name: Add Android platform
       run: cordova platform add android
       
-    - name: Install Cordova plugins
-      run: |
-        cordova plugin add cordova-plugin-file
-      
     - name: Create keystore from base64
       run: |
         # 使用固定的base64密钥（如果存在）
