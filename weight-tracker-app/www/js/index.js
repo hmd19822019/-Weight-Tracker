@@ -1345,58 +1345,35 @@ function exportData() {
         return;
     }
 
-    var filename = '体重记录_' + new Date().toISOString().slice(0, 10) + '.csv';
-    var csv = '\ufeff日期,体重(kg),体脂率(%),备注\n';
-    APP.data.forEach(function(r) {
-        var d = new Date(r.date).toLocaleString('zh-CN');
-        var bf = r.bodyFat != null ? r.bodyFat.toFixed(1) : '';
-        var note = (r.note || '').replace(/,/g, '，').replace(/\n/g, ' ');
-        csv += d + ',' + r.weight.toFixed(1) + ',' + bf + ',' + note + '\n';
+    const filename = `体重记录_${new Date().toISOString().slice(0, 10)}.csv`;
+    let csv = '\ufeff日期,体重(kg),体脂率(%),备注\n';
+    APP.data.forEach(r => {
+        const d = new Date(r.date).toLocaleString('zh-CN');
+        const bf = r.bodyFat != null ? r.bodyFat.toFixed(1) : '';
+        const note = (r.note || '').replace(/,/g, '，').replace(/\n/g, ' ');
+        csv += `${d},${r.weight.toFixed(1)},${bf},${note}\n`;
     });
 
-    // Cordova环境：使用File API写入
-    try {
-        if (window.cordova && window.cordova.file && window.resolveLocalFileSystemURL) {
-            var targetDir = window.cordova.file.externalDataDirectory || window.cordova.file.dataDirectory;
-            if (targetDir) {
-                window.resolveLocalFileSystemURL(targetDir, function(dirEntry) {
-                    dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
-                        fileEntry.createWriter(function(fileWriter) {
-                            var written = false;
-                            fileWriter.onwriteend = function() {
-                                if (!written) {
-                                    written = true;
-                                    fileWriter.write(new Blob([csv], { type: 'text/csv' }));
-                                } else {
-                                    var path = fileEntry.nativeURL || fileEntry.toURL();
-                                    toast('已导出到：' + path, 'success');
-                                }
-                            };
-                            fileWriter.onerror = function() {
-                                toast('写入文件失败', 'error');
-                            };
-                            fileWriter.truncate(0);
-                        }, function() { toast('创建文件失败', 'error'); });
-                    }, function() { toast('无法访问文件', 'error'); });
-                }, function() { toast('无法访问存储目录', 'error'); });
-                return;
-            }
-        }
-    } catch(e) {
-        // File API不可用，静默失败，使用下面的备用方案
-    }
-
-    // 备用方案：标准下载
-    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    var dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    var a = document.createElement('a');
-    a.href = dataUri;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
     a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
     a.click();
-    setTimeout(function() { document.body.removeChild(a); }, 100);
-    toast('已导出文件：' + filename, 'success');
+    URL.revokeObjectURL(url);
+
+    // 获取下载路径（浏览器默认下载文件夹）
+    let downloadPath = filename;
+    if (window.cordova && window.cordova.file) {
+        // Cordova环境
+        downloadPath = (window.cordova.file.externalRootDirectory || '') + 'Download/' + filename;
+    } else {
+        // 浏览器环境 - 尝试获取用户下载文件夹路径
+        const userProfile = navigator.userAgent.includes('Windows') ? 'C:\\Users\\' + (navigator.userAgent.match(/Windows NT.*?;/) || [''])[0].split(';')[0] : '~';
+        downloadPath = userProfile + '\\Downloads\\' + filename;
+    }
+    
+    toast(`已导出：${downloadPath}`, 'success');
 }
 
 function importData() {
