@@ -11,6 +11,15 @@
     
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    
+    <!-- Android 配置 -->
+    <platform name="android">
+        <preference name="AndroidPersistentFileLocation" value="Compatibility" />
+        
+        <!-- 文件访问权限 -->
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        </config-file>
+    </platform>
 </widget>
-
-

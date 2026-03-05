@@ -1354,15 +1354,50 @@ function exportData() {
         csv += `${d},${r.weight.toFixed(1)},${bf},${note}\n`;
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    toast(`已导出文件：${filename}，请在浏览器下载记录中查看`, 'success');
+    // Cordova环境 - 保存到Android存储
+    if (window.cordova && window.cordova.file) {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        
+        // 使用Android的Downloads目录
+        const dirPath = window.cordova.file.externalRootDirectory + 'Download/';
+        const fullPath = dirPath + filename;
+        
+        window.resolveLocalFileSystemURL(dirPath, function(dirEntry) {
+            dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
+                fileEntry.createWriter(function(fileWriter) {
+                    fileWriter.onwriteend = function() {
+                        // 获取完整的文件系统路径
+                        const androidPath = fileEntry.nativeURL || fileEntry.toURL();
+                        toast(`已导出到：${androidPath}`, 'success');
+                    };
+                    fileWriter.onerror = function(e) {
+                        console.error('写入失败:', e);
+                        toast('导出失败：无法写入文件', 'error');
+                    };
+                    fileWriter.write(blob);
+                }, function(err) {
+                    console.error('创建写入器失败:', err);
+                    toast('导出失败：无法创建文件', 'error');
+                });
+            }, function(err) {
+                console.error('获取文件失败:', err);
+                toast('导出失败：无法访问文件', 'error');
+            });
+        }, function(err) {
+            console.error('访问目录失败:', err);
+            toast('导出失败：无法访问下载目录', 'error');
+        });
+    } else {
+        // 浏览器环境回退方案
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast(`已导出文件：${filename}，请在浏览器下载记录中查看`, 'success');
+    }
 }
 
 function importData() {
