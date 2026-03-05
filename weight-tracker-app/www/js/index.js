@@ -1360,32 +1360,18 @@ function exportData() {
         const dirPath = window.cordova.file.externalRootDirectory + 'Download/';
         
         window.resolveLocalFileSystemURL(dirPath, function(dirEntry) {
-            dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
-                fileEntry.createWriter(function(fileWriter) {
-                    // 设置写入位置为文件开头
-                    fileWriter.seek(0);
-                    
-                    fileWriter.onwriteend = function() {
-                        // 写入完成
-                        const androidPath = fileEntry.nativeURL || fileEntry.toURL();
-                        toast(`已导出到：${androidPath}`, 'success');
-                    };
-                    
-                    fileWriter.onerror = function(e) {
-                        console.error('写入失败:', e);
-                        toast('导出失败：无法写入文件', 'error');
-                    };
-                    
-                    // 直接写入数据
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                    fileWriter.write(blob);
-                }, function(err) {
-                    console.error('创建写入器失败:', err);
-                    toast('导出失败：无法创建文件', 'error');
+            // 先尝试删除旧文件
+            dirEntry.getFile(filename, { create: false }, function(fileEntry) {
+                fileEntry.remove(function() {
+                    // 删除成功，创建新文件
+                    createAndWriteFile(dirEntry, filename, csv);
+                }, function() {
+                    // 删除失败也继续创建
+                    createAndWriteFile(dirEntry, filename, csv);
                 });
-            }, function(err) {
-                console.error('获取文件失败:', err);
-                toast('导出失败：无法访问文件', 'error');
+            }, function() {
+                // 文件不存在，直接创建
+                createAndWriteFile(dirEntry, filename, csv);
             });
         }, function(err) {
             console.error('访问目录失败:', err);
@@ -1402,6 +1388,31 @@ function exportData() {
         URL.revokeObjectURL(url);
         toast(`已导出文件：${filename}，请在浏览器下载记录中查看`, 'success');
     }
+}
+
+function createAndWriteFile(dirEntry, filename, content) {
+    dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
+        fileEntry.createWriter(function(fileWriter) {
+            fileWriter.onwriteend = function() {
+                const androidPath = fileEntry.nativeURL || fileEntry.toURL();
+                toast(`已导出到：${androidPath}`, 'success');
+            };
+            
+            fileWriter.onerror = function(e) {
+                console.error('写入失败:', e);
+                toast('导出失败：无法写入文件', 'error');
+            };
+            
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            fileWriter.write(blob);
+        }, function(err) {
+            console.error('创建写入器失败:', err);
+            toast('导出失败：无法创建文件', 'error');
+        });
+    }, function(err) {
+        console.error('获取文件失败:', err);
+        toast('导出失败：无法访问文件', 'error');
+    });
 }
 
 function importData() {
