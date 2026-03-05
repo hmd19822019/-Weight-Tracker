@@ -1362,18 +1362,7 @@ function exportData() {
     a.click();
     URL.revokeObjectURL(url);
 
-    // 获取下载路径（浏览器默认下载文件夹）
-    let downloadPath = filename;
-    if (window.cordova && window.cordova.file) {
-        // Cordova环境
-        downloadPath = (window.cordova.file.externalRootDirectory || '') + 'Download/' + filename;
-    } else {
-        // 浏览器环境 - 尝试获取用户下载文件夹路径
-        const userProfile = navigator.userAgent.includes('Windows') ? 'C:\\Users\\' + (navigator.userAgent.match(/Windows NT.*?;/) || [''])[0].split(';')[0] : '~';
-        downloadPath = userProfile + '\\Downloads\\' + filename;
-    }
-    
-    toast(`已导出：${downloadPath}`, 'success');
+    toast(`已导出文件：${filename}，请在浏览器下载记录中查看`, 'success');
 }
 
 function importData() {
