@@ -1,17 +1,56 @@
-# USER.md - About Your Human
+# USER.md - 关于用户
 
-_Learn about the person you're helping. Update this as you go._
+## 00-核心身份
+- **名字**：（待填写）
+- **角色**：开发者
+- **时区**：Asia/Shanghai (GMT+8)
+- **工作风格**：务实、直接、重视稳定性
 
-- **Name:**
-- **What to call them:**
-- **Pronouns:** _(optional)_
-- **Timezone:**
-- **Notes:**
+## 01-价值观
+- 稳定性优先于功能完整性
+- 及时止损，不在失败方案上反复尝试
+- 接受技术限制，不追求完美
+- 用户能用 > 技术完美
 
-## Context
+## 02-背景
+- 有Cordova/Android开发经验
+- 熟悉Git版本管理
+- 使用GitHub Actions做CI/CD
 
-_(What do they care about? What projects are they working on? What annoys them? What makes them laugh? Build this over time.)_
+## 03-技能
+- JavaScript/HTML/CSS
+- Cordova/Android开发
+- Git版本管理
+- GitHub Actions CI/CD
+
+## 04-沟通风格
+- 使用中文交流
+- 喜欢直接、简洁的回答
+- 不喜欢重复说明
+- 重视实际效果
+
+## 05-目标
+- 短期：完成体重管理应用的开发和维护
+- 长期：探索AI工具和自动化
+
+## 06-知识领域
+- 前端开发
+- 移动应用开发（Android）
+- 版本控制和CI/CD
+
+## 07-工作方式
+- 重视稳定性，不喜欢反复折腾
+- 遇到问题时希望快速找到解决方案
+- 接受"功能受限"的现实
+
+## 08-关系与背景
+- （待补充）
+
+## 09-兴趣
+- AI工具和自动化
+- 开发效率提升
+- OpenClaw和AI Agent
 
 ---
 
-The more you know, the better you can help. But remember — you're learning about a person, not building a dossier. Respect the difference.
+*这个文件会随着我们的交互不断更新和完善*
