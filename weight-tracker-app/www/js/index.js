@@ -1345,11 +1345,12 @@ function exportData() {
         return;
     }
 
+    const filename = `体重记录_${new Date().toISOString().slice(0, 10)}.csv`;
     let csv = '\ufeff日期,体重(kg),体脂率(%),备注\n';
     APP.data.forEach(r => {
         const d = new Date(r.date).toLocaleString('zh-CN');
         const bf = r.bodyFat != null ? r.bodyFat.toFixed(1) : '';
-        const note = (r.note || '').replace(/,/g, '，');
+        const note = (r.note || '').replace(/,/g, '，').replace(/\n/g, ' ');
         csv += `${d},${r.weight.toFixed(1)},${bf},${note}\n`;
     });
 
@@ -1357,11 +1358,11 @@ function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `体重记录_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
 
-    toast('已导出', 'success');
+    toast(`已导出到下载文件夹：${filename}`, 'success');
 }
 
 function importData() {
@@ -1374,67 +1375,138 @@ function importData() {
 
         const reader = new FileReader();
         reader.onload = ev => {
-            const text = ev.target.result;
-            const lines = text.split('\n');
-            let count = 0;
-            let skipped = 0;
+            try {
+                const text = ev.target.result;
+                // 移除 BOM 标记
+                const cleanText = text.replace(/^\ufeff/, '');
+                const lines = cleanText.split('\n');
+                let count = 0;
+                let skipped = 0;
+                let errors = 0;
 
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
+                // 跳过标题行，从第二行开始
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
 
-                const parts = line.split(',');
-                if (parts.length >= 2) {
+                    // 使用正则表达式分割，处理可能包含逗号的字段
+                    const parts = line.split(',').map(p => p.trim());
+                    
+                    if (parts.length < 2) {
+                        errors++;
+                        continue;
+                    }
+
+                    // 解析体重
                     const w = parseFloat(parts[1]);
-                    if (!isNaN(w) && w >= 20 && w <= 300) {
-                        // 尝试解析日期
-                        let recordDate = new Date();
-                        if (parts[0]) {
-                            const parsedDate = new Date(parts[0]);
-                            if (!isNaN(parsedDate.getTime())) {
-                                recordDate = parsedDate;
+                    if (isNaN(w) || w < 20 || w > 300) {
+                        errors++;
+                        continue;
+                    }
+
+                    // 解析日期 - 支持多种格式
+                    let recordDate = null;
+                    if (parts[0]) {
+                        // 尝试直接解析
+                        let parsedDate = new Date(parts[0]);
+                        
+                        // 如果失败，尝试中文日期格式 (2024/1/15 上午8:30:00)
+                        if (isNaN(parsedDate.getTime())) {
+                            // 提取日期部分
+                            const dateMatch = parts[0].match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/);
+                            if (dateMatch) {
+                                const year = parseInt(dateMatch[1]);
+                                const month = parseInt(dateMatch[2]) - 1;
+                                const day = parseInt(dateMatch[3]);
+                                
+                                // 提取时间部分
+                                const timeMatch = parts[0].match(/(\d{1,2}):(\d{1,2})/);
+                                let hour = 12, minute = 0;
+                                if (timeMatch) {
+                                    hour = parseInt(timeMatch[1]);
+                                    minute = parseInt(timeMatch[2]);
+                                    
+                                    // 处理上午/下午
+                                    if (parts[0].includes('下午') && hour < 12) {
+                                        hour += 12;
+                                    } else if (parts[0].includes('上午') && hour === 12) {
+                                        hour = 0;
+                                    }
+                                }
+                                
+                                parsedDate = new Date(year, month, day, hour, minute);
                             }
                         }
-
-                        // 检查是否已存在该日期的记录
-                        const existing = APP.data.find(r => {
-                            const d1 = new Date(r.date).toDateString();
-                            const d2 = recordDate.toDateString();
-                            return d1 === d2;
-                        });
-
-                        if (existing) {
-                            skipped++;
-                            continue;
+                        
+                        if (!isNaN(parsedDate.getTime())) {
+                            recordDate = parsedDate;
                         }
-
-                        APP.data.push({
-                            id: Date.now() + i,
-                            date: recordDate.toISOString(),
-                            weight: w,
-                            bodyFat: parseFloat(parts[2]) || null,
-                            note: parts[3] || '',
-                            photo: null
-                        });
-                        count++;
                     }
-                }
-            }
+                    
+                    // 如果日期解析失败，使用当前时间
+                    if (!recordDate) {
+                        recordDate = new Date();
+                    }
 
-            if (count > 0) {
-                sortData();
-                save();
-                updateAllUI();
-                let msg = `成功导入 ${count} 条记录`;
-                if (skipped > 0) {
-                    msg += `，跳过 ${skipped} 条重复记录`;
+                    // 检查是否已存在该日期的记录
+                    const existing = APP.data.find(r => {
+                        const d1 = new Date(r.date).toDateString();
+                        const d2 = recordDate.toDateString();
+                        return d1 === d2;
+                    });
+
+                    if (existing) {
+                        skipped++;
+                        continue;
+                    }
+
+                    // 解析体脂率
+                    const bf = parts[2] ? parseFloat(parts[2]) : null;
+                    
+                    // 解析备注（可能包含多个字段）
+                    const note = parts.slice(3).join(',').trim();
+
+                    APP.data.push({
+                        id: Date.now() + Math.random(),
+                        date: recordDate.toISOString(),
+                        weight: w,
+                        bodyFat: (!isNaN(bf) && bf > 0 && bf < 100) ? bf : null,
+                        note: note,
+                        photo: null
+                    });
+                    count++;
                 }
-                toast(msg, 'success');
-            } else {
-                toast('未找到有效数据', 'error');
+
+                if (count > 0) {
+                    sortData();
+                    save();
+                    updateAllUI();
+                    checkNewAchievements();
+                    
+                    let msg = `成功导入 ${count} 条记录`;
+                    if (skipped > 0) {
+                        msg += `，跳过 ${skipped} 条重复记录`;
+                    }
+                    if (errors > 0) {
+                        msg += `，${errors} 条数据格式错误`;
+                    }
+                    toast(msg, 'success');
+                } else {
+                    let msg = '未找到有效数据';
+                    if (errors > 0) {
+                        msg += `（${errors} 条数据格式错误）`;
+                    }
+                    if (skipped > 0) {
+                        msg += `（${skipped} 条重复记录）`;
+                    }
+                    toast(msg, 'error');
+                }
+            } catch (err) {
+                console.error('导入错误:', err);
+                toast('导入失败：文件格式错误', 'error');
             }
         };
-        reader.readAsText(file);
+        reader.readAsText(file, 'utf-8');
     };
     input.click();
 }
