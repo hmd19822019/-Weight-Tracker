@@ -1362,17 +1362,13 @@ function exportData() {
         window.resolveLocalFileSystemURL(dirPath, function(dirEntry) {
             dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
                 fileEntry.createWriter(function(fileWriter) {
+                    // 设置写入位置为文件开头
+                    fileWriter.seek(0);
+                    
                     fileWriter.onwriteend = function() {
-                        // 写入完成后的回调
-                        if (fileWriter.length === 0) {
-                            // 截断完成，现在写入数据
-                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                            fileWriter.write(blob);
-                        } else {
-                            // 数据写入完成
-                            const androidPath = fileEntry.nativeURL || fileEntry.toURL();
-                            toast(`已导出到：${androidPath}`, 'success');
-                        }
+                        // 写入完成
+                        const androidPath = fileEntry.nativeURL || fileEntry.toURL();
+                        toast(`已导出到：${androidPath}`, 'success');
                     };
                     
                     fileWriter.onerror = function(e) {
@@ -1380,8 +1376,9 @@ function exportData() {
                         toast('导出失败：无法写入文件', 'error');
                     };
                     
-                    // 先截断文件（清空内容）
-                    fileWriter.truncate(0);
+                    // 直接写入数据
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    fileWriter.write(blob);
                 }, function(err) {
                     console.error('创建写入器失败:', err);
                     toast('导出失败：无法创建文件', 'error');
