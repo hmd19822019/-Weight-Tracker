@@ -1379,80 +1379,309 @@ function exportData() {
 function importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.csv';
+    input.accept = '.csv,.xlsx,.xls';
     input.onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = ev => {
-            try {
-                const text = ev.target.result;
-                const cleanText = text.replace(/^\ufeff/, '');
-                const lines = cleanText.split('\n');
-                let count = 0;
-                let skipped = 0;
-
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-
-                    const parts = line.split(',');
-                    if (parts.length >= 2) {
-                        const w = parseFloat(parts[1]);
-                        if (!isNaN(w) && w >= 20 && w <= 300) {
-                            let recordDate = new Date();
-                            if (parts[0]) {
-                                const parsedDate = new Date(parts[0]);
-                                if (!isNaN(parsedDate.getTime())) {
-                                    recordDate = parsedDate;
-                                }
-                            }
-
-                            const existing = APP.data.find(r => {
-                                const d1 = new Date(r.date).toDateString();
-                                const d2 = recordDate.toDateString();
-                                return d1 === d2;
-                            });
-
-                            if (existing) {
-                                skipped++;
-                                continue;
-                            }
-
-                            APP.data.push({
-                                id: Date.now() + i,
-                                date: recordDate.toISOString(),
-                                weight: w,
-                                bodyFat: parseFloat(parts[2]) || null,
-                                note: parts[3] || '',
-                                photo: null
-                            });
-                            count++;
-                        }
-                    }
-                }
-
-                if (count > 0) {
-                    sortData();
-                    save();
-                    updateAllUI();
-                    let msg = `成功导入 ${count} 条记录`;
-                    if (skipped > 0) {
-                        msg += `，跳过 ${skipped} 条重复记录`;
-                    }
-                    toast(msg, 'success');
-                } else {
-                    toast('未找到有效数据', 'error');
-                }
-            } catch (err) {
-                console.error('导入错误:', err);
-                toast('导入失败：文件格式错误', 'error');
-            }
-        };
-        reader.readAsText(file);
+        const fileName = file.name.toLowerCase();
+        
+        if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+            // Excel文件处理
+            importExcelFile(file);
+        } else {
+            // CSV文件处理
+            importCSVFile(file);
+        }
     };
     input.click();
+}
+
+function importCSVFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const text = ev.target.result;
+            // 移除 BOM 标记
+            const cleanText = text.replace(/^\ufeff/, '');
+            const lines = cleanText.split('\n');
+            let count = 0;
+            let skipped = 0;
+            let errors = 0;
+
+            // 跳过标题行，从第二行开始
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // 使用正则表达式分割，处理可能包含逗号的字段
+                const parts = line.split(',').map(p => p.trim());
+                
+                if (parts.length < 2) {
+                    errors++;
+                    continue;
+                }
+
+                // 解析体重
+                const w = parseFloat(parts[1]);
+                if (isNaN(w) || w < 20 || w > 300) {
+                    errors++;
+                    continue;
+                }
+
+                // 解析日期 - 支持多种格式
+                let recordDate = null;
+                if (parts[0]) {
+                    // 尝试直接解析
+                    let parsedDate = new Date(parts[0]);
+                    
+                    // 如果失败，尝试中文日期格式 (2024/1/15 上午8:30:00)
+                    if (isNaN(parsedDate.getTime())) {
+                        // 提取日期部分
+                        const dateMatch = parts[0].match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/);
+                        if (dateMatch) {
+                            const year = parseInt(dateMatch[1]);
+                            const month = parseInt(dateMatch[2]) - 1;
+                            const day = parseInt(dateMatch[3]);
+                            
+                            // 提取时间部分
+                            const timeMatch = parts[0].match(/(\d{1,2}):(\d{1,2})/);
+                            let hour = 12, minute = 0;
+                            if (timeMatch) {
+                                hour = parseInt(timeMatch[1]);
+                                minute = parseInt(timeMatch[2]);
+                                
+                                // 处理上午/下午
+                                if (parts[0].includes('下午') && hour < 12) {
+                                    hour += 12;
+                                } else if (parts[0].includes('上午') && hour === 12) {
+                                    hour = 0;
+                                }
+                            }
+                            
+                            parsedDate = new Date(year, month, day, hour, minute);
+                        }
+                    }
+                    
+                    if (!isNaN(parsedDate.getTime())) {
+                        recordDate = parsedDate;
+                    }
+                }
+                
+                // 如果日期解析失败，使用当前时间
+                if (!recordDate) {
+                    recordDate = new Date();
+                }
+
+                // 检查是否已存在该日期的记录
+                const existing = APP.data.find(r => {
+                    const d1 = new Date(r.date).toDateString();
+                    const d2 = recordDate.toDateString();
+                    return d1 === d2;
+                });
+
+                if (existing) {
+                    skipped++;
+                    continue;
+                }
+
+                // 解析体脂率
+                const bf = parts[2] ? parseFloat(parts[2]) : null;
+                
+                // 解析备注（可能包含多个字段）
+                const note = parts.slice(3).join(',').trim();
+
+                APP.data.push({
+                    id: Date.now() + Math.random(),
+                    date: recordDate.toISOString(),
+                    weight: w,
+                    bodyFat: (!isNaN(bf) && bf > 0 && bf < 100) ? bf : null,
+                    note: note,
+                    photo: null
+                });
+                count++;
+            }
+
+            if (count > 0) {
+                sortData();
+                save();
+                updateAllUI();
+                checkNewAchievements();
+                
+                let msg = `成功导入 ${count} 条记录`;
+                if (skipped > 0) {
+                    msg += `，跳过 ${skipped} 条重复记录`;
+                }
+                if (errors > 0) {
+                    msg += `，${errors} 条数据格式错误`;
+                }
+                toast(msg, 'success');
+            } else {
+                let msg = '未找到有效数据';
+                if (errors > 0) {
+                    msg += `（${errors} 条数据格式错误）`;
+                }
+                if (skipped > 0) {
+                    msg += `（${skipped} 条重复记录）`;
+                }
+                toast(msg, 'error');
+            }
+        } catch (err) {
+            console.error('导入错误:', err);
+            toast('导入失败：文件格式错误', 'error');
+        }
+    };
+    reader.readAsText(file, 'utf-8');
+}
+
+function importExcelFile(file) {
+    // 使用 SheetJS 库解析 Excel
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const data = new Uint8Array(ev.target.result);
+            
+            // 检查是否加载了 SheetJS 库
+            if (typeof XLSX === 'undefined') {
+                toast('正在加载Excel解析库，请稍候...', 'info');
+                
+                // 动态加载 SheetJS
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+                script.onload = () => {
+                    processExcelData(data);
+                };
+                script.onerror = () => {
+                    toast('加载Excel解析库失败，请检查网络连接', 'error');
+                };
+                document.head.appendChild(script);
+            } else {
+                processExcelData(data);
+            }
+        } catch (err) {
+            console.error('Excel读取错误:', err);
+            toast('Excel文件读取失败', 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function processExcelData(data) {
+    try {
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        
+        let count = 0;
+        let skipped = 0;
+        let errors = 0;
+        
+        // 从第二行开始（跳过标题）
+        for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (!row || row.length < 2) continue;
+            
+            // 解析体重（可能在第1列或第2列）
+            let w = parseFloat(row[1]);
+            if (isNaN(w) && row.length > 1) {
+                w = parseFloat(row[0]);
+            }
+            
+            if (isNaN(w) || w < 20 || w > 300) {
+                errors++;
+                continue;
+            }
+            
+            // 解析日期
+            let recordDate = null;
+            const dateValue = row[0];
+            
+            if (dateValue) {
+                // Excel日期可能是数字（天数）或字符串
+                if (typeof dateValue === 'number') {
+                    // Excel日期转换（1900年1月1日为基准）
+                    recordDate = new Date((dateValue - 25569) * 86400 * 1000);
+                } else {
+                    // 字符串日期
+                    let parsedDate = new Date(dateValue);
+                    
+                    if (isNaN(parsedDate.getTime())) {
+                        // 尝试中文格式
+                        const dateMatch = String(dateValue).match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/);
+                        if (dateMatch) {
+                            parsedDate = new Date(
+                                parseInt(dateMatch[1]),
+                                parseInt(dateMatch[2]) - 1,
+                                parseInt(dateMatch[3])
+                            );
+                        }
+                    }
+                    
+                    if (!isNaN(parsedDate.getTime())) {
+                        recordDate = parsedDate;
+                    }
+                }
+            }
+            
+            if (!recordDate || isNaN(recordDate.getTime())) {
+                recordDate = new Date();
+            }
+            
+            // 检查重复
+            const existing = APP.data.find(r => {
+                const d1 = new Date(r.date).toDateString();
+                const d2 = recordDate.toDateString();
+                return d1 === d2;
+            });
+            
+            if (existing) {
+                skipped++;
+                continue;
+            }
+            
+            // 解析体脂率和备注
+            const bf = row[2] ? parseFloat(row[2]) : null;
+            const note = row[3] ? String(row[3]).trim() : '';
+            
+            APP.data.push({
+                id: Date.now() + Math.random(),
+                date: recordDate.toISOString(),
+                weight: w,
+                bodyFat: (!isNaN(bf) && bf > 0 && bf < 100) ? bf : null,
+                note: note,
+                photo: null
+            });
+            count++;
+        }
+        
+        if (count > 0) {
+            sortData();
+            save();
+            updateAllUI();
+            checkNewAchievements();
+            
+            let msg = `成功从Excel导入 ${count} 条记录`;
+            if (skipped > 0) {
+                msg += `，跳过 ${skipped} 条重复记录`;
+            }
+            if (errors > 0) {
+                msg += `，${errors} 条数据格式错误`;
+            }
+            toast(msg, 'success');
+        } else {
+            let msg = 'Excel中未找到有效数据';
+            if (errors > 0) {
+                msg += `（${errors} 条数据格式错误）`;
+            }
+            if (skipped > 0) {
+                msg += `（${skipped} 条重复记录）`;
+            }
+            toast(msg, 'error');
+        }
+    } catch (err) {
+        console.error('Excel解析错误:', err);
+        toast('Excel文件解析失败：' + err.message, 'error');
+    }
 }
 
 function createBackup() {
