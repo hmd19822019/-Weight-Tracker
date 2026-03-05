@@ -12,3 +12,5 @@
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 </widget>
+
+
