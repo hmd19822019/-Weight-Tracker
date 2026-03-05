@@ -1339,6 +1339,31 @@ function renderAchievements() {
 // ===================================
 // 数据管理
 // ===================================
+function createAndWriteFile(dirEntry, filename, content) {
+    dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
+        fileEntry.createWriter(function(fileWriter) {
+            fileWriter.onwriteend = function() {
+                const androidPath = fileEntry.nativeURL || fileEntry.toURL();
+                toast(`已导出到：${androidPath}`, 'success');
+            };
+            
+            fileWriter.onerror = function(e) {
+                console.error('写入失败:', e);
+                toast('导出失败：无法写入文件', 'error');
+            };
+            
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            fileWriter.write(blob);
+        }, function(err) {
+            console.error('创建写入器失败:', err);
+            toast('导出失败：无法创建文件', 'error');
+        });
+    }, function(err) {
+        console.error('获取文件失败:', err);
+        toast('导出失败：无法访问文件', 'error');
+    });
+}
+
 function exportData() {
     if (!APP.data.length) {
         toast('没有数据可导出', 'error');
@@ -1388,31 +1413,6 @@ function exportData() {
         URL.revokeObjectURL(url);
         toast(`已导出文件：${filename}，请在浏览器下载记录中查看`, 'success');
     }
-}
-
-function createAndWriteFile(dirEntry, filename, content) {
-    dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
-        fileEntry.createWriter(function(fileWriter) {
-            fileWriter.onwriteend = function() {
-                const androidPath = fileEntry.nativeURL || fileEntry.toURL();
-                toast(`已导出到：${androidPath}`, 'success');
-            };
-            
-            fileWriter.onerror = function(e) {
-                console.error('写入失败:', e);
-                toast('导出失败：无法写入文件', 'error');
-            };
-            
-            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-            fileWriter.write(blob);
-        }, function(err) {
-            console.error('创建写入器失败:', err);
-            toast('导出失败：无法创建文件', 'error');
-        });
-    }, function(err) {
-        console.error('获取文件失败:', err);
-        toast('导出失败：无法访问文件', 'error');
-    });
 }
 
 function importData() {
