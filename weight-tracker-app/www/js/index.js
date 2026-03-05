@@ -1354,25 +1354,75 @@ function exportData() {
         csv += `${d},${r.weight.toFixed(1)},${bf},${note}\n`;
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    // 根据环境显示不同的路径提示
-    let pathMsg = '';
-    if (window.cordova) {
-        // Android环境
-        pathMsg = `已导出到：/storage/emulated/0/Download/${filename}\n或在文件管理器的"下载"文件夹中查找`;
-    } else {
-        // 浏览器环境
-        pathMsg = `已导出文件：${filename}\n请在浏览器下载记录中查看`;
+    // 优先使用Cordova File API写入Android存储
+    try {
+        if (window.cordova && window.cordova.file && window.resolveLocalFileSystemURL) {
+            var targetDir = cordova.file.externalDataDirectory 
+                         || cordova.file.dataDirectory;
+            
+            if (!targetDir) {
+                fallbackExport(csv, filename);
+                return;
+            }
+            
+            window.resolveLocalFileSystemURL(targetDir, function(dirEntry) {
+                dirEntry.getFile(filename, { create: true, exclusive: false }, function(fileEntry) {
+                    fileEntry.createWriter(function(fileWriter) {
+                        var written = false;
+                        
+                        fileWriter.onwriteend = function() {
+                            if (!written) {
+                                // truncate完成，开始写入
+                                written = true;
+                                var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                                fileWriter.write(blob);
+                            } else {
+                                // 写入完成
+                                var fullPath = fileEntry.nativeURL || fileEntry.toURL() || (targetDir + filename);
+                                toast('已导出到：' + fullPath, 'success');
+                            }
+                        };
+                        
+                        fileWriter.onerror = function(e) {
+                            console.error('写入失败:', e);
+                            fallbackExport(csv, filename);
+                        };
+                        
+                        // 先清空文件再写入
+                        fileWriter.truncate(0);
+                    }, function(err) {
+                        console.error('创建写入器失败:', err);
+                        fallbackExport(csv, filename);
+                    });
+                }, function(err) {
+                    console.error('获取文件失败:', err);
+                    fallbackExport(csv, filename);
+                });
+            }, function(err) {
+                console.error('访问目录失败:', err);
+                fallbackExport(csv, filename);
+            });
+            return;
+        }
+    } catch(e) {
+        console.error('Cordova文件API异常:', e);
     }
     
-    toast(pathMsg, 'success');
+    // 非Cordova环境
+    fallbackExport(csv, filename);
+}
+
+function fallbackExport(csv, filename) {
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('已导出文件：' + filename, 'success');
 }
 
 function importData() {
