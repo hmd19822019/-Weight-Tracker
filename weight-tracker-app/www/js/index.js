@@ -1354,44 +1354,26 @@ function exportData() {
         csv += `${d},${r.weight.toFixed(1)},${bf},${note}\n`;
     });
 
-    // 使用标准下载方式（兼容性最好）
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
     a.click();
-    
-    setTimeout(function() {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 100);
+    URL.revokeObjectURL(url);
 
-    // 显示路径提示
-    if (window.cordova) {
-        toast('已导出到：/storage/emulated/0/Download/' + filename + '\n请在文件管理器的"下载"文件夹中查找', 'success');
+    // 获取下载路径（浏览器默认下载文件夹）
+    let downloadPath = filename;
+    if (window.cordova && window.cordova.file) {
+        // Cordova环境
+        downloadPath = (window.cordova.file.externalRootDirectory || '') + 'Download/' + filename;
     } else {
-        toast('已导出文件：' + filename, 'success');
+        // 浏览器环境 - 尝试获取用户下载文件夹路径
+        const userProfile = navigator.userAgent.includes('Windows') ? 'C:\\Users\\' + (navigator.userAgent.match(/Windows NT.*?;/) || [''])[0].split(';')[0] : '~';
+        downloadPath = userProfile + '\\Downloads\\' + filename;
     }
-}
-
-function fallbackExport(csv, filename) {
-    // 保留此函数以防其他地方调用
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function() {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 100);
-    toast('已导出文件：' + filename, 'success');
+    
+    toast(`已导出：${downloadPath}`, 'success');
 }
 
 function importData() {
