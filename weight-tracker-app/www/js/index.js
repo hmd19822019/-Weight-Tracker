@@ -1362,7 +1362,17 @@ function exportData() {
     a.click();
     URL.revokeObjectURL(url);
 
-    toast(`已导出文件：${filename}`, 'success');
+    // 根据环境显示不同的路径提示
+    let pathMsg = '';
+    if (window.cordova) {
+        // Android环境
+        pathMsg = `已导出到：/storage/emulated/0/Download/${filename}\n或在文件管理器的"下载"文件夹中查找`;
+    } else {
+        // 浏览器环境
+        pathMsg = `已导出文件：${filename}\n请在浏览器下载记录中查看`;
+    }
+    
+    toast(pathMsg, 'success');
 }
 
 function importData() {
