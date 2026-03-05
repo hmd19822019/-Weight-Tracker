@@ -1354,13 +1354,22 @@ function exportData() {
         csv += `${d},${r.weight.toFixed(1)},${bf},${note}\n`;
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    // 使用data URI方式（更可靠）
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    
     const a = document.createElement('a');
-    a.href = url;
+    a.href = dataUri;
     a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    
+    // 触发点击
     a.click();
-    URL.revokeObjectURL(url);
+    
+    // 延迟移除
+    setTimeout(function() {
+        document.body.removeChild(a);
+    }, 100);
 
     toast('已导出文件：' + filename + '\n\n请在以下位置查找：\n1. 文件管理器 > Download文件夹\n2. 浏览器下载记录', 'success');
 }
