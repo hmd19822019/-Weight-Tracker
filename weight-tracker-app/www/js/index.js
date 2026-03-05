@@ -1354,80 +1354,15 @@ function exportData() {
         csv += `${d},${r.weight.toFixed(1)},${bf},${note}\n`;
     });
 
-    // 方案1: 尝试标准下载
-    try {
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        
-        setTimeout(function() {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
-        
-        toast('已导出：' + filename + '\n请在Download文件夹查找\n\n如未找到文件，请点击"复制数据"按钮', 'success');
-    } catch(e) {
-        console.error('导出失败:', e);
-        copyToClipboard(csv, filename);
-    }
-}
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 
-function copyToClipboard(text, filename) {
-    // 方案2: 复制到剪贴板
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function() {
-            toast('数据已复制到剪贴板\n可粘贴到记事本保存为：' + filename, 'success');
-        }).catch(function() {
-            showCopyDialog(text, filename);
-        });
-    } else {
-        showCopyDialog(text, filename);
-    }
-}
-
-function showCopyDialog(text, filename) {
-    // 方案3: 显示文本框让用户手动复制
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
-    
-    const content = document.createElement('div');
-    content.style.cssText = 'background:white;border-radius:8px;padding:20px;max-width:90%;max-height:80%;overflow:auto;';
-    
-    const title = document.createElement('h3');
-    title.textContent = '导出数据';
-    title.style.marginTop = '0';
-    
-    const instruction = document.createElement('p');
-    instruction.textContent = '请长按下方文本框，选择全部并复制，然后粘贴到记事本保存为：' + filename;
-    instruction.style.fontSize = '14px';
-    instruction.style.color = '#666';
-    
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.cssText = 'width:100%;height:200px;font-family:monospace;font-size:12px;padding:10px;border:1px solid #ddd;border-radius:4px;';
-    textarea.readOnly = true;
-    
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '关闭';
-    closeBtn.style.cssText = 'margin-top:10px;padding:10px 20px;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer;';
-    closeBtn.onclick = function() {
-        document.body.removeChild(modal);
-    };
-    
-    content.appendChild(title);
-    content.appendChild(instruction);
-    content.appendChild(textarea);
-    content.appendChild(closeBtn);
-    modal.appendChild(content);
-    document.body.appendChild(modal);
-    
-    // 自动选中文本
-    textarea.select();
+    toast('已导出文件：' + filename + '\n\n请在以下位置查找：\n1. 文件管理器 > Download文件夹\n2. 浏览器下载记录', 'success');
 }
 
 function importData() {
