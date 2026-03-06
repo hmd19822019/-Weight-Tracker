@@ -1,0 +1,47 @@
+# OpenClaw工作区 - 敏感信息保护
+
+# 凭证和密钥
+credentials/
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+.env
+.env.*
+
+# 临时文件
+*.tmp
+*.log
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Node modules（如果有）
+node_modules/
+package-lock.json
+
+# 构建产物
+dist/
+build/
+*.apk
+*.aab
+
+# IDE配置
+.vscode/
+.idea/
+*.iml
+
+# 可能包含敏感信息的记忆文件（可选）
+# 如果MEMORY.md包含私密信息，取消下面的注释
+# MEMORY.md
+# memory/
+
+# Skills可能包含敏感配置
+skills/*/config.json
+skills/*/.env
+
+# 临时测试文件
+test-*.md
+scratch/
