@@ -13,6 +13,22 @@ Things like:
 - Device nicknames
 - Anything environment-specific
 
+## Agent Browser 注意事项
+
+### 中文输入问题
+agent-browser 的 `fill` 和 `type` 命令不支持中文字符输入，会导致超时。
+
+**解决方案**：使用 `eval` 命令执行 JavaScript
+
+```bash
+# 错误方式（会超时）
+agent-browser fill @e1 "中文内容"
+
+# 正确方式
+agent-browser eval "document.querySelector('#input-id').value = '中文内容'"
+agent-browser eval "document.querySelector('#button-id').click()"
+```
+
 ## Examples
 
 ```markdown

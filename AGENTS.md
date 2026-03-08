@@ -113,9 +113,30 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 **Don't overdo it:** One reaction per message max. Pick the one that fits best.
 
-## Tools
+## Tools & Skills - MANDATORY WORKFLOW
 
-Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
+### ⚠️ CRITICAL RULE: Skills First, Always
+
+**Before using ANY tool, check if a skill exists for the task:**
+
+1. **Scan available skills** - Look at the task type
+2. **If a skill matches** → **MUST read its SKILL.md first** (use `read` tool)
+3. **Follow the skill's instructions** - They contain best practices and known issues
+4. **Only use raw tools** if no skill exists or skill explicitly fails
+
+**Why this matters:**
+- Skills = accumulated wisdom from past mistakes
+- Raw tools = you're on your own, likely to repeat known errors
+- Example: Agent Browser skill documents the Chinese input workaround
+
+**Violation = Learning Opportunity:**
+- If you skip a skill and hit problems → document it in `memory/YYYY-MM-DD.md`
+- Update `TOOLS.md` with the lesson learned
+- Use self-improvement skill to prevent future violations
+
+### Local Tool Notes
+
+Keep environment-specific notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
 
 **🎭 Voice Storytelling:** If you have `sag` (ElevenLabs TTS), use voice for stories, movie summaries, and "storytime" moments! Way more engaging than walls of text. Surprise people with funny voices.
 

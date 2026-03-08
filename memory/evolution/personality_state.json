@@ -6,7 +6,7 @@
     "creativity": 0.35,
     "verbosity": 0.25,
     "risk_tolerance": 0.4,
-    "obedience": 0.85
+    "obedience": 0.9
   },
   "stats": {
     "rigor=0.7|creativity=0.3|verbosity=0.3|risk_tolerance=0.4|obedience=0.9": {
@@ -40,5 +40,5 @@
       "notes": "event:evt_1772764419865"
     }
   ],
-  "updated_at": "2026-03-06T02:33:40.268Z"
+  "updated_at": "2026-03-07T15:23:47.574Z"
 }

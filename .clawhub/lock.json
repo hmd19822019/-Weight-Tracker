@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "skills": {
+    "Summarize": {
+      "version": "1.0.0",
+      "installedAt": 1772803084985
+    },
+    "summarize": {
+      "version": "1.0.0",
+      "installedAt": 1772803270335
+    }
+  }
+}

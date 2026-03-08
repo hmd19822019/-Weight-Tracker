@@ -9,6 +9,13 @@
     </author>
     <content src="index.html" />
     
+    <!-- 网络访问权限 -->
+    <access origin="*" />
+    <allow-navigation href="*" />
+    
+    <!-- 允许访问百度AI API -->
+    <access origin="https://aip.baidubce.com" />
+    
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 </widget>

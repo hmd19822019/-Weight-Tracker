@@ -18,12 +18,15 @@ class FoodCalorieRecognizer {
     async getAccessToken() {
         // 检查token是否过期
         if (this.accessToken && Date.now() < this.tokenExpireTime) {
+            console.log('使用缓存的Token');
             return this.accessToken;
         }
 
         try {
+            console.log('获取新的Access Token...');
             const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${this.API_KEY}&client_secret=${this.SECRET_KEY}`;
             
+            console.log('发送Token请求...');
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -31,7 +34,9 @@ class FoodCalorieRecognizer {
                 }
             });
 
+            console.log('Token响应状态:', response.status);
             const data = await response.json();
+            console.log('Token响应数据:', data);
             
             if (data.access_token) {
                 this.accessToken = data.access_token;
@@ -42,12 +47,14 @@ class FoodCalorieRecognizer {
                 localStorage.setItem('baidu_access_token', this.accessToken);
                 localStorage.setItem('baidu_token_expire', this.tokenExpireTime);
                 
+                console.log('Token获取成功');
                 return this.accessToken;
             } else {
-                throw new Error('获取Access Token失败');
+                throw new Error('获取Access Token失败: ' + JSON.stringify(data));
             }
         } catch (error) {
             console.error('获取Access Token错误:', error);
+            console.error('错误详情:', error.message);
             throw error;
         }
     }
@@ -59,12 +66,17 @@ class FoodCalorieRecognizer {
      */
     async recognizeFood(imageBase64) {
         try {
+            console.log('开始识别食物...');
             const token = await this.getAccessToken();
+            console.log('Token获取成功');
+            
             const url = `https://aip.baidubce.com/rest/2.0/image-classify/v2/dish?access_token=${token}`;
 
             // 移除Base64前缀（如果有）
             const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+            console.log('图片数据长度:', base64Data.length);
 
+            console.log('发送请求到百度API...');
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -73,7 +85,9 @@ class FoodCalorieRecognizer {
                 body: `image=${encodeURIComponent(base64Data)}&top_num=5`
             });
 
+            console.log('收到响应，状态:', response.status);
             const data = await response.json();
+            console.log('API响应:', data);
 
             if (data.error_code) {
                 throw new Error(data.error_msg || '识别失败');
@@ -83,6 +97,7 @@ class FoodCalorieRecognizer {
             return this.parseRecognitionResult(data);
         } catch (error) {
             console.error('食物识别错误:', error);
+            console.error('错误详情:', error.message, error.stack);
             throw error;
         }
     }
