@@ -63,7 +63,7 @@ class FoodCalorieRecognizer {
             const url = `https://aip.baidubce.com/rest/2.0/image-classify/v2/dish?access_token=${token}`;
 
             // 移除Base64前缀（如果有）
-            const base64Data = imageBase64.replace(/^data:image\\/\\w+;base64,/, '');
+            const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
             const response = await fetch(url, {
                 method: 'POST',

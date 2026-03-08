@@ -51,8 +51,13 @@ class FoodTab {
         if (!file) return;
 
         try {
+            // 检查 foodRecognizer 是否存在
+            if (typeof window.foodRecognizer === 'undefined') {
+                throw new Error('食物识别模块未加载，请刷新页面重试');
+            }
+
             // 显示预览
-            const base64 = await foodRecognizer.getImageFromFile(file);
+            const base64 = await window.foodRecognizer.getImageFromFile(file);
             document.getElementById('foodPhotoImg').src = base64;
             document.getElementById('foodPhotoPreview').style.display = 'block';
             document.getElementById('takeFoodPhoto').style.display = 'none';
@@ -63,10 +68,10 @@ class FoodTab {
             document.getElementById('resultContent').style.display = 'none';
 
             // 压缩图片
-            const compressed = await foodRecognizer.compressImage(base64);
+            const compressed = await window.foodRecognizer.compressImage(base64);
 
             // 识别食物
-            const result = await foodRecognizer.recognizeFood(compressed);
+            const result = await window.foodRecognizer.recognizeFood(compressed);
 
             // 显示结果
             this.displayRecognitionResult(result);
