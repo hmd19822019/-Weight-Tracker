@@ -22,30 +22,30 @@ class FoodCalorieRecognizer {
             return this.accessToken;
         }
 
+        // 从localStorage恢复
+        const savedToken = localStorage.getItem('baidu_access_token');
+        const savedExpire = localStorage.getItem('baidu_token_expire');
+        if (savedToken && savedExpire && Date.now() < parseInt(savedExpire)) {
+            console.log('从缓存恢复Token');
+            this.accessToken = savedToken;
+            this.tokenExpireTime = parseInt(savedExpire);
+            return this.accessToken;
+        }
+
         try {
             console.log('获取新的Access Token...');
-            const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${this.API_KEY}&client_secret=${this.SECRET_KEY}`;
+            const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${this.API_KEY}&client_secret=${encodeURIComponent(this.SECRET_KEY)}`;
             
             console.log('发送Token请求...');
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            console.log('Token响应状态:', response.status);
-            const data = await response.json();
+            const data = await this._httpPost(url, '', 'application/json');
             console.log('Token响应数据:', data);
             
             if (data.access_token) {
                 this.accessToken = data.access_token;
-                // token有效期30天，提前1天刷新
                 this.tokenExpireTime = Date.now() + (29 * 24 * 60 * 60 * 1000);
                 
-                // 保存到localStorage
                 localStorage.setItem('baidu_access_token', this.accessToken);
-                localStorage.setItem('baidu_token_expire', this.tokenExpireTime);
+                localStorage.setItem('baidu_token_expire', this.tokenExpireTime.toString());
                 
                 console.log('Token获取成功');
                 return this.accessToken;
@@ -54,7 +54,6 @@ class FoodCalorieRecognizer {
             }
         } catch (error) {
             console.error('获取Access Token错误:', error);
-            console.error('错误详情:', error.message);
             throw error;
         }
     }
@@ -72,32 +71,20 @@ class FoodCalorieRecognizer {
             
             const url = `https://aip.baidubce.com/rest/2.0/image-classify/v2/dish?access_token=${token}`;
 
-            // 移除Base64前缀（如果有）
             const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
             console.log('图片数据长度:', base64Data.length);
 
             console.log('发送请求到百度API...');
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `image=${encodeURIComponent(base64Data)}&top_num=5`
-            });
-
-            console.log('收到响应，状态:', response.status);
-            const data = await response.json();
+            const data = await this._httpPost(url, `image=${encodeURIComponent(base64Data)}&top_num=5`, 'application/x-www-form-urlencoded');
             console.log('API响应:', data);
 
             if (data.error_code) {
                 throw new Error(data.error_msg || '识别失败');
             }
 
-            // 解析结果
             return this.parseRecognitionResult(data);
         } catch (error) {
             console.error('食物识别错误:', error);
-            console.error('错误详情:', error.message, error.stack);
             throw error;
         }
     }
@@ -219,6 +206,37 @@ class FoodCalorieRecognizer {
                 resolve(canvas.toDataURL('image/jpeg', 0.8));
             };
             img.src = base64;
+        });
+    }
+    /**
+     * 使用XMLHttpRequest发送POST请求（Cordova WebView兼容性更好）
+     */
+    _httpPost(url, body, contentType) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('Content-Type', contentType);
+            xhr.timeout = 30000;
+            
+            xhr.onload = function() {
+                console.log('XHR响应状态:', xhr.status);
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    resolve(data);
+                } catch (e) {
+                    reject(new Error('解析响应失败: ' + xhr.responseText.substring(0, 200)));
+                }
+            };
+            
+            xhr.onerror = function() {
+                reject(new Error('网络请求失败，请检查网络连接'));
+            };
+            
+            xhr.ontimeout = function() {
+                reject(new Error('请求超时，请重试'));
+            };
+            
+            xhr.send(body);
         });
     }
 }
