@@ -93,7 +93,7 @@ jobs:
         EOF
         
     - name: Build Android Release APK
-      run: cordova build android --release
+      run: cordova build android --release -- --gradleArg=-Dorg.gradle.warning.mode=none
       
     - name: Rename APK
       run: |
